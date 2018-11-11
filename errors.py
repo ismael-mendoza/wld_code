@@ -186,8 +186,8 @@ def linear_fit(g1s,medians,fit_args):
 def linear_f(b0, b1, x):
     return b0*x + b1
 
-def cubic_f(b0,b1,x): 
-    return b0*(x**3) + b1 
+def cubic_f(b0,b1,b3, x): 
+    return b0 + b1 * x + b3*(x**3)
 
 def chi_sq_fit(g1s,medians, fit_args): 
     # print(g1s)
@@ -411,108 +411,108 @@ def get_money_errors(g1s, g1_or_g2, errs_iso, errs_grp, cats, fit_procedure, fit
 #######################################################################################################################
 #######################################################################################################################
 
-#calculate error on the slope for a linear function that goes through the origin with bootstrap. 
-def err_slope_boot(cats,param,filters): 
-    meds = [] #each of this is a tuple of 9 medians to fit
+# #calculate error on the slope for a linear function that goes through the origin with bootstrap. 
+# def err_slope_boot(cats,param,filters): 
+#     meds = [] #each of this is a tuple of 9 medians to fit
     
-    filter_cats = get_filter_cats(main_cats,filters)        
-    intersect_cats = get_intersection_cats(filter_cats)
+#     filter_cats = get_filter_cats(main_cats,filters)        
+#     intersect_cats = get_intersection_cats(filter_cats)
       
-    #generate random N samples of the slope. 
-    N = 10000
-    slopes = []
+#     #generate random N samples of the slope. 
+#     N = 10000
+#     slopes = []
 
 
-#use boostrap to calculate error on the median. 
-def errs_mean_boot(cats,param):
-    stds = []
-    for cat in cats: 
-        true_mean = np.mean(cat[param])
-        n = len(cat)
+# #use boostrap to calculate error on the median. 
+# def errs_mean_boot(cats,param):
+#     stds = []
+#     for cat in cats: 
+#         true_mean = np.mean(cat[param])
+#         n = len(cat)
     
-        #generate random N sample with replacement 
-        N = 10000
-        means = bootstrap_param_cat(cat, param, N, np.mean)
+#         #generate random N sample with replacement 
+#         N = 10000
+#         means = bootstrap_param_cat(cat, param, N, np.mean)
             
-        #stds.append((n,np.std(meds),meds)) #make it a 68% percentile instead of std, more robust. 
-        print('just to check that symmetry is respected print both percentiles: {}'.format(np.absolute(np.percentile(means,[16,84]) - true_mean)))
-        stds.append(np.absolute(np.percentile(means,84) - true_mean))
-    return stds
+#         #stds.append((n,np.std(meds),meds)) #make it a 68% percentile instead of std, more robust. 
+#         print('just to check that symmetry is respected print both percentiles: {}'.format(np.absolute(np.percentile(means,[16,84]) - true_mean)))
+#         stds.append(np.absolute(np.percentile(means,84) - true_mean))
+#     return stds
 
 
-def errs_med_boot(cats,param):
-    stds = []
-    for cat in cats: 
-        n = len(cat)
-        true_median = np.median(cat[param])
-        N = 10000
+# def errs_med_boot(cats,param):
+#     stds = []
+#     for cat in cats: 
+#         n = len(cat)
+#         true_median = np.median(cat[param])
+#         N = 10000
 
-        median = bootstrap_param_cat(cat, param, N, np.mean)
-        #generate random N sample of medians with replacement 
-        meds = []
-        for i in range(N):
-            sample = np.random.choice(cat[param],size=n)
-            meds.append(np.median(sample))
+#         median = bootstrap_param_cat(cat, param, N, np.mean)
+#         #generate random N sample of medians with replacement 
+#         meds = []
+#         for i in range(N):
+#             sample = np.random.choice(cat[param],size=n)
+#             meds.append(np.median(sample))
             
-        #stds.append((n,np.std(meds),meds)) #make it a 68% percentile instead of std, more robust. 
-        print('just to check that symmetry is respected print both percentiles: {}'.format(np.absolute(np.percentile(meds,[16,84]) - true_median)))
-        stds.append(np.absolute(np.percentile(meds,84) - true_median))
-    return stds
+#         #stds.append((n,np.std(meds),meds)) #make it a 68% percentile instead of std, more robust. 
+#         print('just to check that symmetry is respected print both percentiles: {}'.format(np.absolute(np.percentile(meds,[16,84]) - true_median)))
+#         stds.append(np.absolute(np.percentile(meds,84) - true_median))
+#     return stds
 
 
 
-#chi-squared function to calculate linear regression coefficients using covariance matrix. 
-def get_mixcov(corr,errs):
-    #we obtain a new covariance matrix: 
-    mixcov = np.zeros(corr.shape) 
-    for i in range(corr.shape[0]): 
-        for j in range(corr.shape[1]): 
-            mixcov[i,j] = corr[i,j] * errs[i] * errs[j]
-            mixcov[j,i] = mixcov[i,j]
+# #chi-squared function to calculate linear regression coefficients using covariance matrix. 
+# def get_mixcov(corr,errs):
+#     #we obtain a new covariance matrix: 
+#     mixcov = np.zeros(corr.shape) 
+#     for i in range(corr.shape[0]): 
+#         for j in range(corr.shape[1]): 
+#             mixcov[i,j] = corr[i,j] * errs[i] * errs[j]
+#             mixcov[j,i] = mixcov[i,j]
         
-    return mixcov
+#     return mixcov
 
 
-#this function is an old first draft of the following bootstrap function. 
-def get_bias_covariance_matrices(main_cats,gi): 
-    #notice that this function limits the ellipticity bias grp to be between +1.5,-1.5 since mean function 
-    # would be heavily biased otherwise. 
-    num_cats = len(main_cats)
-    covariance_matrix = np.zeros((num_cats, num_cats))
-    covariance_matrix_grp = np.zeros((num_cats, num_cats))
-    for i in range(num_cats): 
-        for j in range(num_cats)[:i+1]: 
-            cat_i = main_cats[i]
-            cat_j = main_cats[j]
-            cut_cat1 = abs_cut(cat_i,'bias_{}_grp'.format(gi),1.5)
-            cut_cat2 = abs_cut(cat_j,'bias_{}_grp'.format(gi),1.5)
-            cut_intersection_cats = get_intersection_cats([cut_cat1,cut_cat2])
-            cut_intersect_cat1 = cut_intersection_cats[0]
-            cut_intersect_cat2 = cut_intersection_cats[1]
-            cut_length_intersection = float(len(cut_intersect_cat1))
-            b1_mean_grp,b2_mean_grp = np.mean(cut_intersect_cat1['bias_{}_grp'.format(gi)]),np.mean(cut_intersect_cat2['bias_{}_grp'.format(gi)])
-            b1_mean,b2_mean = np.mean(cut_intersect_cat1['bias_{}'.format(gi)]),np.mean(cut_intersect_cat2['bias_{}'.format(gi)])
-            covariance_matrix_grp[i,j] = np.sum((cut_intersect_cat1['bias_{}_grp'.format(gi)] - b1_mean_grp)*(cut_intersect_cat2['bias_{}_grp'.format(gi)] - b2_mean_grp))/(cut_length_intersection-1)
-            covariance_matrix[i,j] = np.sum((cut_intersect_cat1['bias_{}'.format(gi)] - b1_mean)*(cut_intersect_cat2['bias_{}'.format(gi)] - b2_mean))/(cut_length_intersection-1)
+# #this function is an old first draft of the following bootstrap function. 
+# def get_bias_covariance_matrices(main_cats,gi): 
+#     #notice that this function limits the ellipticity bias grp to be between +1.5,-1.5 since mean function 
+#     # would be heavily biased otherwise. 
+#     num_cats = len(main_cats)
+#     covariance_matrix = np.zeros((num_cats, num_cats))
+#     covariance_matrix_grp = np.zeros((num_cats, num_cats))
+#     for i in range(num_cats): 
+#         for j in range(num_cats)[:i+1]: 
+#             cat_i = main_cats[i]
+#             cat_j = main_cats[j]
+#             cut_cat1 = abs_cut(cat_i,'bias_{}_grp'.format(gi),1.5)
+#             cut_cat2 = abs_cut(cat_j,'bias_{}_grp'.format(gi),1.5)
+#             cut_intersection_cats = get_intersection_cats([cut_cat1,cut_cat2])
+#             cut_intersect_cat1 = cut_intersection_cats[0]
+#             cut_intersect_cat2 = cut_intersection_cats[1]
+#             cut_length_intersection = float(len(cut_intersect_cat1))
+#             b1_mean_grp,b2_mean_grp = np.mean(cut_intersect_cat1['bias_{}_grp'.format(gi)]),np.mean(cut_intersect_cat2['bias_{}_grp'.format(gi)])
+#             b1_mean,b2_mean = np.mean(cut_intersect_cat1['bias_{}'.format(gi)]),np.mean(cut_intersect_cat2['bias_{}'.format(gi)])
+#             covariance_matrix_grp[i,j] = np.sum((cut_intersect_cat1['bias_{}_grp'.format(gi)] - b1_mean_grp)*(cut_intersect_cat2['bias_{}_grp'.format(gi)] - b2_mean_grp))/(cut_length_intersection-1)
+#             covariance_matrix[i,j] = np.sum((cut_intersect_cat1['bias_{}'.format(gi)] - b1_mean)*(cut_intersect_cat2['bias_{}'.format(gi)] - b2_mean))/(cut_length_intersection-1)
             
-            #make symmetric by copying elements 
-            covariance_matrix[j,i] = covariance_matrix[i,j]
-            covariance_matrix_grp[j,i] = covariance_matrix_grp[i,j]
+#             #make symmetric by copying elements 
+#             covariance_matrix[j,i] = covariance_matrix[i,j]
+#             covariance_matrix_grp[j,i] = covariance_matrix_grp[i,j]
             
-    #also calculate correlation matrices just for fun. 
-    correlation_matrix = np.zeros((num_cats, num_cats))
-    correlation_matrix_grp = np.zeros((num_cats,num_cats))
-    for i in range(num_cats): 
-        for j in range(num_cats)[:i+1]: 
-            correlation_matrix[i,j] = covariance_matrix[i,j]/ np.sqrt(covariance_matrix[i,i]*covariance_matrix[j,j])
-            correlation_matrix_grp[i,j] = covariance_matrix_grp[i,j]/ np.sqrt(covariance_matrix_grp[i,i]*covariance_matrix_grp[j,j])
+#     #also calculate correlation matrices just for fun. 
+#     correlation_matrix = np.zeros((num_cats, num_cats))
+#     correlation_matrix_grp = np.zeros((num_cats,num_cats))
+#     for i in range(num_cats): 
+#         for j in range(num_cats)[:i+1]: 
+#             correlation_matrix[i,j] = covariance_matrix[i,j]/ np.sqrt(covariance_matrix[i,i]*covariance_matrix[j,j])
+#             correlation_matrix_grp[i,j] = covariance_matrix_grp[i,j]/ np.sqrt(covariance_matrix_grp[i,i]*covariance_matrix_grp[j,j])
             
-            #make symmetric by copying elements 
-            correlation_matrix[j,i] = correlation_matrix[i,j]
-            correlation_matrix_grp[j,i] = correlation_matrix_grp[i,j]
+#             #make symmetric by copying elements 
+#             correlation_matrix[j,i] = correlation_matrix[i,j]
+#             correlation_matrix_grp[j,i] = correlation_matrix_grp[i,j]
             
 
-    return covariance_matrix, covariance_matrix_grp,correlation_matrix,correlation_matrix_grp
+#     return covariance_matrix, covariance_matrix_grp,correlation_matrix,correlation_matrix_grp
     
 
 #still obtains second plot but this plot hasn't been used at all. 
