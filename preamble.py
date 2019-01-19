@@ -64,6 +64,17 @@ final_fitsLSST10 = os.path.join(locations['wld'], 'projectLSST-g1_15-g2_0/final_
 final_fitsLSST11 = os.path.join(locations['wld'], 'projectLSST-g1_20-g2_0/final_fits.fits'), 
 final_fitsLSST12 = os.path.join(locations['wld'], 'projectLSST-g1_50-g2_0/final_fits.fits'), 
 final_fitsLSST13 = os.path.join(locations['wld'], 'projectLSST-g1_100-g2_0/final_fits.fits'), 
+    
+
+final_fitsLSST1_ss1 = os.path.join(locations['wld'],'projectLSST-g1_-20-g2_0_ss1/final_fits.fits'),
+final_fitsLSST2_ss1 = os.path.join(locations['wld'],'projectLSST-g1_-15-g2_0_ss1/final_fits.fits'),
+final_fitsLSST3_ss1 = os.path.join(locations['wld'],'projectLSST-g1_-10-g2_0_ss1/final_fits.fits'),
+final_fitsLSST4_ss1 = os.path.join(locations['wld'],'projectLSST-g1_-5-g2_0_ss1/final_fits.fits'),
+final_fitsLSST5_ss1 = os.path.join(locations['wld'],'projectLSST-g1_0-g2_0_ss1/final_fits.fits'),
+final_fitsLSST6_ss1 = os.path.join(locations['wld'],'projectLSST-g1_5-g2_0_ss1/final_fits.fits'),
+final_fitsLSST7_ss1 = os.path.join(locations['wld'],'projectLSST-g1_10-g2_0_ss1/final_fits.fits'),
+final_fitsLSST8_ss1 = os.path.join(locations['wld'],'projectLSST-g1_15-g2_0_ss1/final_fits.fits'),
+final_fitsLSST9_ss1 = os.path.join(locations['wld'],'projectLSST-g1_20-g2_0_ss1/final_fits.fits'),
 )
 
 ## Samples 

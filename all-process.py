@@ -1,13 +1,16 @@
+#####This file is to be run when rooted in WLD. 
+
 import numpy as np 
 import os
 import sys 
 import argparse
-import descwl 
 import subprocess
 import fitsio
 import astropy 
 import astropy.io.fits as fits
 import astropy.table as astroTable 
+import descwl 
+
 
 #algorithm for ambiguous blends - returns indices of ambiguously blended objects in terms of the table of full catalogue. 
 #ambiguously blended means that at least one non-detected true object is less than a unit of effective distance away from an ambiguous object. 
@@ -199,7 +202,7 @@ def main():
 
     os.chdir(inputs_slac['WLD'])
     ##########################################################################################################################################################################################
-    #simulate the 16 regions. 
+    #simulate the regions. 
 
     if args.simulate_all:
         #constants used for the endpoints. 
@@ -212,19 +215,20 @@ def main():
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
-                cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}{}{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose'.format(inputs_slac['one_sq_degree'],args.survey_name,image_width,image_height,args.project,SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
-                slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output{}{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs_slac['project'],i,j,cmd)
+                cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps'.format(inputs_slac['one_sq_degree'],args.survey_name,image_width,image_height,args.project,SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
+                slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs_slac['project'],i,j,cmd)
                 os.system(slac_cmd)
+                
 
     elif args.simulate_single:
-        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose'.format(inputs_slac['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs_slac['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
+        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps'.format(inputs_slac['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs_slac['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
         slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output-{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs_slac['project'],args.section_name,cmd)
         os.system(slac_cmd)
 
     ##########################################################################################################################################################################################
     #trim extra HDUs to reduce file size. 
     def process(file_name): 
-        hdus = astropy.io.fits.open(file_name)
+        hdus = fits.open(file_name)
         del hdus[2:]
         
         #delete old file 
@@ -236,7 +240,7 @@ def main():
     if args.process_all: 
         for i in range(args.num_sections):
             for j in range(args.num_sections):
-                file_name = '{}/{}{}{}.fits'.format(args.project,SECTION_NAME,i,j)
+                file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
                 process(file_name)
 
 
@@ -267,8 +271,8 @@ def main():
         for i in range(args.num_sections):
             for j in range(args.num_sections):
 
-                noisefile_name = '{}/{}{}{}.fits'.format(args.project,args.noise_name,i,j)
-                file_name = '{}/{}{}{}.fits'.format(args.project,SECTION_NAME,i,j)
+                noisefile_name = '{}/{}_{}_{}.fits'.format(args.project,args.noise_name,i,j)
+                file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
                 add_noise(noisefile_name,file_name,args.noise_seed)
 
     if args.add_noise_single: 
@@ -348,10 +352,10 @@ def main():
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
-                file_name = '{}/{}{}{}.fits'.format(args.project,SECTION_NAME,i,j)
-                noisefile_name = '{}/{}{}{}.fits'.format(args.project,args.noise_name,i,j)
-                outputfile_name = '{}/{}{}{}.cat'.format(args.project,args.outcat_name,i,j)
-                finalfits_name =  '{}/{}{}{}.fits'.format(args.project,args.final_name,i,j)
+                file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
+                noisefile_name = '{}/{}_{}_{}.fits'.format(args.project,args.noise_name,i,j)
+                outputfile_name = '{}/{}_{}_{}.cat'.format(args.project,args.outcat_name,i,j)
+                finalfits_name =  '{}/{}_{}_{}.fits'.format(args.project,args.final_name,i,j)
                 extract(file_name,noisefile_name, outputfile_name, finalfits_name,total_height,total_width,x,y)
 
     if args.extract_single: 
@@ -373,7 +377,7 @@ def main():
         stamps,past_i = None,None
         for i in range(args.num_sections):
             for j in range(args.num_sections):
-                finalfits_name =  '{}/{}{}{}.fits'.format(args.project,args.final_name,i,j)
+                finalfits_name =  '{}/{}_{}_{}.fits'.format(args.project,args.final_name,i,j)
                 table = astroTable.Table.read(finalfits_name)                
                 tables.append(table)
 

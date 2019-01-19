@@ -47,7 +47,7 @@ def errs_param_boot(cats, param, N, func):
         stds.append(np.absolute(np.percentile(funcs,84) - true_func))
     return stds
 
-def bootstrap_param_cat(cat, param, N, func): 
+def indp_boot_param_cats(cat, param, N, func): 
     #return a bootstrapped list of some function of parameters(median, mean, etc.) from some catalogue
     bootstrapped_list = []
     n = len(cat)
