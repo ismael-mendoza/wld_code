@@ -73,7 +73,7 @@ def hash_row(cat):
 #create boostrap of a catalogue of galaxies, where we assume all of the cat in cats have the same ids and length (as in a selection cats). 
 #the output is len(cats) catalogues of length N, each of the boostrapped catalogues has the same ids. 
 # the output ALWAYS has the same size as the original catalogue(s). 
-#The input ALWAYS has to have distinct , unique ids .
+#The input ALWAYS has to have distinct, unique ids .
 def bootstrap_cats(cats): 
     ids = list(set(cats[0]['db_id'])) #the set(.) fnc should have no effect here. 
     n = len(ids)
