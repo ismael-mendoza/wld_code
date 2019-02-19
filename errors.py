@@ -373,9 +373,9 @@ def get_money_plot(g1s,g1_or_g2,errs_grp,errs_iso,cats,fit_procedure, fit_args,t
 def get_money_errors(g1s, g1_or_g2, errs_iso, errs_grp, cats, fit_procedure, fit_args): 
 
     ################################  UNBLENDED  ################################################
-    means = [np.mean(cat['bias_{}'.format(g1_or_g2)]) for cat in cats]
+    #means = [np.mean(cat['bias_{}'.format(g1_or_g2)]) for cat in cats]
     medians = [np.median(cat['bias_{}'.format(g1_or_g2)]) for cat in cats]
-    sigmas = [preamble.mad(cat['bias_{}'.format(g1_or_g2)]) for cat in cats]
+    #sigmas = [preamble.mad(cat['bias_{}'.format(g1_or_g2)]) for cat in cats]
     
     # use the method describe in the page above for std of the median 
     fit_args['errs'] = errs_iso #only used in the linear fit function. 
@@ -386,9 +386,9 @@ def get_money_errors(g1s, g1_or_g2, errs_iso, errs_grp, cats, fit_procedure, fit
     beta0_iso, beta1_iso, beta0_err_iso, beta1_err_iso, beta01_corr_iso = fit_procedure(g1s, medians, fit_args)
 
     ################################  BLENDED  ################################################
-    means = [np.mean(cat['bias_{}_grp'.format(g1_or_g2)]) for cat in cats]
+    #means = [np.mean(cat['bias_{}_grp'.format(g1_or_g2)]) for cat in cats]
     medians = [np.median(cat['bias_{}_grp'.format(g1_or_g2)]) for cat in cats]
-    sigmas = [preamble.mad(cat['bias_{}_grp'.format(g1_or_g2)]) for cat in cats]
+    #sigmas = [preamble.mad(cat['bias_{}_grp'.format(g1_or_g2)]) for cat in cats]
     
     # use the method describe in the page above for std of the median 
     fit_args['errs'] = errs_grp #only used in the linear fit function. 

@@ -74,7 +74,7 @@ def get_tomo_multp_bias(g1s, tomo_cats, tomo_errs, tomo_bootstrap_matrices):
 
 #here we might need to do parallel computing. 
 def get_tomo_multp_correlations(tomo_cats, ms): 
-    pass 
+    raise NotImplementedError 
     # get 10000 multiplicative biases for each tomo cat. 
 
 
