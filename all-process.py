@@ -27,7 +27,7 @@ def detected_ambiguous_blends(table,matched_indices,detected):
             #calculate of effective distances of true non-primary match object with all primarily matched objects. 
             effective_distances = list(np.sqrt((detected['X_IMAGE']-gal_row['dx'])**2 + (detected['Y_IMAGE']-gal_row['dy'])**2)/(detected['SIGMA'] + gal_row['psf_sigm']))
             
-            #mark all objects with effective distance <1. as ambiguosly blended. 
+            #mark all objects with effective distance <1 as ambiguosly blended. 
             marked_indices = [matched_indices[i] for i,distance in enumerate(effective_distances) if distance < 1.]
             
             #if at least one index was marked as ambiguous, add both the primarily match object and the true non-primary object as ambiguous. 
