@@ -206,7 +206,7 @@ def main():
 
     if args.simulate_all:
         #constants used for the endpoints. 
-        endpoint2 = (1.-1./args.num_sections)/2
+        endpoint2 = (1.-1./args.num_sections)/2 #in degrees. 
         endpoint1 = -endpoint2
         total_height = 1. * 60 * 60 / pixel_scale #in pixels
         total_width = 1. * 60 * 60 / pixel_scale
