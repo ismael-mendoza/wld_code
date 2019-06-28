@@ -10,10 +10,13 @@ import astropy
 import astropy.io.fits as fits
 import astropy.table as astroTable 
 import descwl 
+from loguru import logger 
 
 
 #algorithm for ambiguous blends - returns indices of ambiguously blended objects in terms of the table of full catalogue. 
 #ambiguously blended means that at least one non-detected true object is less than a unit of effective distance away from an ambiguous object. 
+
+@logger.catch
 def detected_ambiguous_blends(table,matched_indices,detected):
     """
     table: table containing entries of all galaxies of the catalog. 
@@ -36,16 +39,26 @@ def detected_ambiguous_blends(table,matched_indices,detected):
                 ambiguous_blends_indices.extend(marked_indices)
     return set(ambiguous_blends_indices)
 
-
+@logger.catch
 def main():
-    parser = argparse.ArgumentParser(description=('Simulate 16 different regions from a square' 
+
+    #names to be used.
+    WLD_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD'
+    data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
+    logs_dir = f'{WLD_DIR}/logs'
+
+    #setup logger. 
+    logger.add(f"{logs_dir}/all-process.log", format="{time}-{level}: {message}", level="INFO", backtrace=True, rotation="7:00", enqueue=True) #new file created every day at 7:00 am . 
+
+    #setup argparser. 
+    parser = argparse.ArgumentParser(description=('Simulate different regions from a square' 
                                                   'degree and analyze their combination in'
                                                   'SExtractor.'),
                                      formatter_class=(
                                      argparse.ArgumentDefaultsHelpFormatter))
 
     parser.add_argument('--simulate-all', action='store_true',
-                        help=('Simulates the requested 16 regions with given job_number'))
+                        help=('Simulates the requested regions with given job_number using multiple batch jobs.'))
 
     parser.add_argument('--add-noise-all', action='store_true',
                         help=('Add noise to all of the images (one for each section) of the project.'))
@@ -54,7 +67,7 @@ def main():
                         help=('Classifies into detected and ambiously blended for a one square degree.'))
 
     parser.add_argument('--combine', action='store_true',
-                        help=('Combines 16 regions with given job_number'))
+                        help=('Combines regions with given job_number'))
 
     parser.add_argument('--process-all', action='store_true',
                         help=('Prepare files needed to run pipeline in one square degree .'))
@@ -145,6 +158,7 @@ def main():
 
     args = parser.parse_args()
 
+    #make sure only arguments that make sense are selected. 
     if (args.simulate_all or args.simulate_single) and (args.cosmic_shear_g1==None or args.cosmic_shear_g2==None): 
         raise RuntimeError('Need to include the cosmic shear when simulating.')
 
@@ -168,40 +182,36 @@ def main():
     elif args.survey_name == 'DES': 
         pixel_scale = .263
 
+    logger.info(f"Using survey {args.survey_name} and pixel scale {pixel_scale}")
     SECTION_NAME = 'section'
 
     ###################################################################
-    #names to be used.
+
+    logger.info(f"Remember by default we assume we are running in SLAC cluster with WLD directory being: {WLD_dir}")
+
     inputs = dict(
-    noise_image = '/Users/Ismael/aegis/WeakLensingDeblending/{}/{}.fits'.format(args.project,args.noise_name),
-    output_detected = '/Users/Ismael/aegis/WeakLensingDeblending/{}/{}.cat'.format(args.project,args.outcat_name),
-    final_fits = '/Users/Ismael/aegis/WeakLensingDeblending/{}/{}.fits'.format(args.project,args.final_name),
-    project = '/Users/Ismael/aegis/WeakLensingDeblending/{}'.format(args.project),
-    single_section = '/Users/Ismael/aegis/WeakLensingDeblending/{}/{}.fits'.format(args.project,args.section_name),
-    config_file = '/Users/Ismael/aegis/data/sextractor_runs/default.sex',
-    param_file = '/Users/Ismael/aegis/data/sextractor_runs/default.param',
-    filter_file = '/Users/Ismael/aegis/data/sextractor_runs/default.conv', 
-    starnnw_file = '/Users/Ismael/aegis/data/sextractor_runs/default.nnw',
-    WLD = '/Users/Ismael/aegis/WeakLensingDeblending/',
-    sample_fits = '/Users/Ismael/aegis/data/section001.fits',
-    one_sq_degree = '/Users/Ismael/aegis/data/OneDegSq.fits',
+    project = f'{data_dir}/{args.project}', 
+    noise_image = f'{data_dir}/{args.project}/{args.noise_name}.fits',
+    output_detected = f'{data_dir}/{args.project}/{args.outcat_name}.cat',
+    final_fits = f'{data_dir}/{arts.project}/{args.final_name}.fits',
+    single_section = f'{data_dir}/{args.project}/{args.section_name}.fits',
+    config_file = f'{data_dir}/sextractor_runs/default.sex',
+    param_file = f'{data_dir}/sextractor_runs/default.param',
+    filter_file = f'{data_dir}/sextractor_runs/default.conv', 
+    starnnw_file = f'{data_dir}/sextractor_runs/default.nnw',
+    WLD = WLD_dir,
+    sample_fits = f'{data_dir}/example.fits',
+    one_sq_degree = f'{data_dir}/OneDegSq.fits',
     )
 
-    #change names to slac names to be used inside slac. 
-    inputs_slac = dict()
-    for f in inputs: 
-        l = inputs[f].split("/")
-        index_aegis = l.index("aegis")
-        str_slac = "/".join(l[index_aegis+1:])
-        slac_file = '{0}{1}'.format('/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/',str_slac)
-        inputs_slac[f] = slac_file
-
     #create project directory if does not exist yet
-    if not os.path.exists(inputs_slac['project']):
-        os.makedirs(inputs_slac['project'])
+    if not os.path.exists(inputs['project']):
+        os.makedirs(inputs['project'])
 
-    os.chdir(inputs_slac['WLD'])
-    ##########################################################################################################################################################################################
+    os.chdir(inputs['WLD'])  #convenience so we can run simulate... 
+
+
+    ######################################################################################################################################################################################################################################
     #simulate the regions. 
 
     if args.simulate_all:
@@ -211,28 +221,35 @@ def main():
         total_height = 1. * 60 * 60 / pixel_scale #in pixels
         total_width = 1. * 60 * 60 / pixel_scale
 
-        image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) #preferentially args.num_sections is a multiple of 18000 (pixels)
+        #make sure args.num_sections is a multiple of 18000 (pixels)
+        image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) 
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
-                cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps'.format(inputs_slac['one_sq_degree'],args.survey_name,image_width,image_height,args.project,SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
-                slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs_slac['project'],i,j,cmd)
+                cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps'.format(inputs['one_sq_degree'],args.survey_name,image_width,image_height,args.project,SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
+                slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs['project'],i,j,cmd)
+
+                logger.info(f"Running the slac cmd: {slac_cmd}")
+
                 os.system(slac_cmd)
                 
 
     elif args.simulate_single:
-        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps'.format(inputs_slac['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs_slac['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
-        slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output-{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs_slac['project'],args.section_name,cmd)
+        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps'.format(inputs['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
+        slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output-{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs['project'],args.section_name,cmd)
         os.system(slac_cmd)
 
-    ##########################################################################################################################################################################################
-    #trim extra HDUs to reduce file size. 
+    ######################################################################################################################################################################################################################################
+    #trim extra HDUs (containing individual galaxy partials, etc.) to reduce file size. 
     def process(file_name): 
+        logger.info(f"Delete the third HDU and on from {file_name}")
+
         hdus = fits.open(file_name)
         del hdus[2:]
-        
-        #delete old file 
-        subprocess.call('rm {}'.format(file_name),shell=True)
+        subprocess.call('rm {}'.format(file_name),shell=True)  #delete old file 
+
+        logger.info(f"Creating {file_name} w/out the HDUs previously deleted...")
+
         hdus.writeto(file_name)
         hdus.close()
 
@@ -245,27 +262,23 @@ def main():
 
 
     if args.process_single: 
-        process(inputs_slac['single_section'])
+        process(inputs['single_section'])
 
 
-    #######################################################################################################################################################################################
+    ######################################################################################################################################################################################################################################
     #add noise to the image before extraction. 
     def add_noise(noisefile_name,file_name,noise_seed): 
-        #read noise image. 
-        # fits_section = fitsio.FITS(noisefile_name)
-        # stamp = fits_section[0].read()
-        # generator = galsim.random.BaseDeviate(seed = noise_seed)
-        # noise = galsim.PoissonNoise(rng = generator, sky_level = results.survey.mean_sky_level)
-        # stamp_galsim = galsim.Image(array=stamp,wcs=galsim.PixelScale(pixel_scale),bounds=galsim.BoundsI(xmin=0, xmax=stamp.shape[0]-1, ymin=0, ymax=stamp.shape[1]-1))
-        # stamp_galsim.addNoise(noise)
 
         #take any noise_seed and add noise to the image generated
+        logger.debug(f"Adding noise to {file_name} with noise seed: {noise_seed}")
+        
         reader = descwl.output.Reader(file_name)
         results = reader.results
         results.add_noise(noise_seed=noise_seed)
         f = fits.PrimaryHDU(results.survey.image.array)
-        f.writeto(noisefile_name)
 
+        logger.info(f"Writing new image with noise as .fits file to {noisefile_name}.")
+        f.writeto(noisefile_name)
 
     if args.add_noise_all: 
         for i in range(args.num_sections):
@@ -276,17 +289,23 @@ def main():
                 add_noise(noisefile_name,file_name,args.noise_seed)
 
     if args.add_noise_single: 
-        add_noise(inputs_slac['noise_image'], inputs_slac['single_section'], args.noise_seed)
+        add_noise(inputs['noise_image'], inputs['single_section'], args.noise_seed)
 
-    ##########################################################################################################################################################################################
+    ###################################################################################################################
     #source extract and detect ambiguous blends 
 
     def extract(file_name,noisefile_name,outputfile_name,finalfits_name,total_height=None,total_width=None,x=None,y=None):
 
+        logger.info(f"Will source extract galaxies from noise file {noisefile_name}")
+
         #run sextractor on noise image.
-        cmd = 'sex {} -c {} -CATALOG_NAME {} -PARAMETERS_NAME {} -FILTER_NAME {} -STARNNW_NAME {}'.format(noisefile_name,inputs_slac['config_file'],outputfile_name,inputs_slac['param_file'],inputs_slac['filter_file'],inputs_slac['starnnw_file'])
-        print(cmd)
+        cmd = 'sex {} -c {} -CATALOG_NAME {} -PARAMETERS_NAME {} -FILTER_NAME {} -STARNNW_NAME {}'.format(noisefile_name,inputs['config_file'],outputfile_name,inputs['param_file'],inputs['filter_file'],inputs['starnnw_file'])
+
+        logger.info(f"With cmd: {cmd}")
+
         os.system(cmd)
+
+        logger.success(f"Successfully source extracted {noisefile_name}!")
 
         #read noise image to figure out image bounds. 
         fits_section = fitsio.FITS(noisefile_name)
@@ -298,6 +317,7 @@ def main():
         cat = descwl.output.Reader(file_name).results
         table = cat.table
         detected,matched,indices,distance = cat.match_sextractor(outputfile_name)
+        logger.success(f"Successfully matched catalogue with source extractor from sextract output: {outputfile_name}")
 
         #convert to arcsecs and relative to this image's center (not to absolute)
         detected['X_IMAGE'] = (detected['X_IMAGE'] - 0.5*image_width - 0.5)*pixel_scale
@@ -308,8 +328,8 @@ def main():
             detected['X_IMAGE']+=x*(total_width*pixel_scale)
             detected['Y_IMAGE']+=y*(total_height*pixel_scale)
 
-            table['dx']+=x*total_width*pixel_scale 
-            table['dy']+=y*total_height*pixel_scale
+            table['dx']+=x*(total_width*pixel_scale)
+            table['dy']+=y*(total_height*pixel_scale)
 
         #convert second moments arcsecs, do not have to adjust because we only just it for sigma calculation. 
         detected['X2_IMAGE']*=pixel_scale**2 
@@ -327,11 +347,16 @@ def main():
         detected.add_column(SIGMA)
 
         #find the indices of the ambiguous blends. 
+        logger.info("Finding indices/ids that are ambiguosly blended")
         ambg_blends = detected_ambiguous_blends(table, indices, detected)
-        ambg_blends_indices = list(ambg_blends)
+        ambg_blends_indices = set(list(ambg_blends))
         ambg_blends_ids = list(table[ambg_blends_indices]['db_id'])
+        logger.success("All indices have been found")
+
 
         #add columns to table of undetected and ambiguosly blended 
+        logger.info(f"Adding column to original table and writing it to {finalfits_name}")
+
         ambigous_blend_column = []
         for i,gal_row in enumerate(table):
             if i in ambg_blends_indices:
@@ -341,14 +366,18 @@ def main():
         column = astroTable.Column(name='ambig_blend',data=ambigous_blend_column)
         table.add_column(column)
 
+        logger.debug(f"Number of galaxies in table from file {finalfits_name} is: {len(table)}")
+
         table.write(finalfits_name)
 
-    if args.extract_all: 
 
+    if args.extract_all: 
         total_height = 1. * 60 * 60 / pixel_scale #in pixels
         total_width = 1. * 60 * 60 / pixel_scale
         endpoint2 = (1.-1./args.num_sections)/2
         endpoint1 = -endpoint2
+
+        logger.debug(f"Initializing extraction with total height {total_height} and total width {total_width} and endpoints")
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
@@ -359,7 +388,7 @@ def main():
                 extract(file_name,noisefile_name, outputfile_name, finalfits_name,total_height,total_width,x,y)
 
     if args.extract_single: 
-        extract(inputs_slac['single_section'],inputs_slac['noise_image'], inputs_slac['output_detected'], inputs_slac['final_fits'])
+        extract(inputs['single_section'],inputs['noise_image'], inputs['output_detected'], inputs['final_fits'])
 
 
     ##########################################################################################################################################################################################
@@ -378,23 +407,54 @@ def main():
         for i in range(args.num_sections):
             for j in range(args.num_sections):
                 finalfits_name =  '{}/{}_{}_{}.fits'.format(args.project,args.final_name,i,j)
+
+                logger.info(f"Reading one of final fits before combining with name {finalfits_name}")
+
                 table = astroTable.Table.read(finalfits_name)                
                 tables.append(table)
 
 
         #combine tables list into final Table 
+        logger.info("Vstacking the tables from each of the final fits files into one big table...")
+
         from astropy.table import vstack 
         Table = vstack(tables)
-        Table.write(inputs_slac['final_fits'])
+        Table.write(inputs['final_fits'])
+
+        logger.success(f"Successfully stacked tables!, wrote them to {inputs['final_fits']}")
+        logger.debug(f"Number of galaxies after combining all tables is {len(Table)}")
 
         #have to adjust to a correct header. 
-        f = fits.open(inputs_slac['final_fits'])
-        f_sample = fits.open(inputs_slac['sample_fits'])  #sample section of the job_number. 
+        logger.debug(f"adjusting the headers in a weird way of the final fit file. Total width is {total_width} and total height {total_height}")
+
+        f = fits.open(inputs['final_fits'])
+
+        logger.info(f"Reading header from {inputs['sample_fits']}")
+
+        f_sample = fits.open(inputs['sample_fits'])  #sample section of the job_number. 
         f[0].header = f_sample[0].header
         f[0].header['E_HEIGHT'] = total_height
         f[0].header['GE_WIDTH'] = total_width
-        subprocess.call('rm {0}'.format(inputs_slac['final_fits']), shell=True) #delete older one so no problems at overwriting. 
-        f.writeto(inputs_slac['final_fits'])
+
+        #delete older one so no problems at overwriting. 
+        subprocess.call('rm {0}'.format(inputs['final_fits']), shell=True) 
+
+        logger.info(f"Writing final results to {inputs['final_fits']}")
+
+        f.writeto(inputs['final_fits'])
+
+        logger.success("All done writing last file.")
 
 if __name__=='__main__':
     main()
+
+
+
+
+#read noise image. 
+# fits_section = fitsio.FITS(noisefile_name)
+# stamp = fits_section[0].read()
+# generator = galsim.random.BaseDeviate(seed = noise_seed)
+# noise = galsim.PoissonNoise(rng = generator, sky_level = results.survey.mean_sky_level)
+# stamp_galsim = galsim.Image(array=stamp,wcs=galsim.PixelScale(pixel_scale),bounds=galsim.BoundsI(xmin=0, xmax=stamp.shape[0]-1, ymin=0, ymax=stamp.shape[1]-1))
+# stamp_galsim.addNoise(noise)
