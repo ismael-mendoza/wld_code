@@ -16,22 +16,22 @@ project_name = 'project'
 #for g in ['-0.05','-0.10']: 
 # for g in ['-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02']: 
 #for g in [ '0.02']:
-#for g in ['0.0']: 
+for g in ['0.0']: 
 #for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']: 
-    # os.system(f'python mycode/all-process.py --simulate-all --num-sections 12 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0_ss1 --survey-name {survey_name}')
+    os.system(f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0 --survey-name {survey_name}')
 
 
 
 ####################################### the rest #######################################
 
-for g in ['.02']:
-#for g in ['-.005','-.01','-.015','-.02','0.','.005','.01','.015']:  
-#for g in ['-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02']: 
-# for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','0.','.005','.01','.015', '0.02', '0.05', '0.1']: 
-# for g in ['0.0']: 
-# for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']: 
-    # os.system('bsub -W 30:00 -o "output-{2}{1}-g1_{0}-g2_0.txt" -r "python all-process.py --process-all --add-noise-all --extract-all --combine  --num-sections 10 --project {2}{1}-g1_{0}-g2_0_ss1 --noise-seed 0 --survey-name {1}" '.format(int(float(g)*1000),survey_name,project_name))
-    os.system('bsub -W 30:00 -o "output-{2}{1}-g1_{0}-g2_0_ss1.txt" -r "python mycode/all-process.py --add-noise-all --extract-all --combine  --num-sections 12 --project {2}{1}-g1_{0}-g2_0_ss1 --noise-seed 0 --survey-name {1}" '.format(int(float(g)*1000),survey_name,project_name))
+# for g in ['.02']:
+# #for g in ['-.005','-.01','-.015','-.02','0.','.005','.01','.015']:  
+# #for g in ['-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02']: 
+# # for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','0.','.005','.01','.015', '0.02', '0.05', '0.1']: 
+# # for g in ['0.0']: 
+# # for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']: 
+#     # os.system('bsub -W 30:00 -o "output-{2}{1}-g1_{0}-g2_0.txt" -r "python all-process.py --process-all --add-noise-all --extract-all --combine  --num-sections 10 --project {2}{1}-g1_{0}-g2_0_ss1 --noise-seed 0 --survey-name {1}" '.format(int(float(g)*1000),survey_name,project_name))
+#     os.system('bsub -W 30:00 -o "output-{2}{1}-g1_{0}-g2_0_ss1.txt" -r "python mycode/all-process.py --add-noise-all --extract-all --combine  --num-sections 12 --project {2}{1}-g1_{0}-g2_0_ss1 --noise-seed 0 --survey-name {1}" '.format(int(float(g)*1000),survey_name,project_name))
 
 
 

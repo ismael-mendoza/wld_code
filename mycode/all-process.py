@@ -9,16 +9,16 @@ import fitsio
 import astropy 
 import astropy.io.fits as fits
 import astropy.table as astroTable 
-import descwl 
+from WeakLensingDeblending import descwl 
 from loguru import logger 
-
-
-#algorithm for ambiguous blends - returns indices of ambiguously blended objects in terms of the table of full catalogue. 
-#ambiguously blended means that at least one non-detected true object is less than a unit of effective distance away from an ambiguous object. 
 
 @logger.catch
 def detected_ambiguous_blends(table,matched_indices,detected):
     """
+    Algorithm for ambiguous blends - returns indices of ambiguously blended objects in terms of the table of full catalogue. 
+
+    Ambiguously blended means that at least one non-detected true object is less than a unit of effective distance away from an ambiguous object. 
+
     table: table containing entries of all galaxies of the catalog. 
     matched_indices: indices of galaxies in table that were detected by SExtractor (primary  matched)
     detected: Table of detected objects by SExtractor which also contains their information as measured by SExtractor. 
@@ -45,7 +45,8 @@ def main():
     #names to be used.
     WLD_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD'
     data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
-    logs_dir = f'{WLD_DIR}/logs'
+    logs_dir = f'{WLD_dir}/logs'
+    params_dir=f"{WLD_dir}/params"
 
     #setup logger. 
     logger.add(f"{logs_dir}/all-process.log", format="{time}-{level}: {message}", level="INFO", backtrace=True, rotation="7:00", enqueue=True) #new file created every day at 7:00 am . 
@@ -182,7 +183,7 @@ def main():
     elif args.survey_name == 'DES': 
         pixel_scale = .263
 
-    logger.info(f"Using survey {args.survey_name} and pixel scale {pixel_scale}")
+    logger.info(f"\n Using survey {args.survey_name} and pixel scale {pixel_scale}")
     SECTION_NAME = 'section'
 
     ###################################################################
@@ -192,16 +193,17 @@ def main():
     inputs = dict(
     project = f'{data_dir}/{args.project}', 
     noise_image = f'{data_dir}/{args.project}/{args.noise_name}.fits',
-    output_detected = f'{data_dir}/{args.project}/{args.outcat_name}.cat',
-    final_fits = f'{data_dir}/{arts.project}/{args.final_name}.fits',
+    final_fits = f'{data_dir}/{args.project}/{args.final_name}.fits',
     single_section = f'{data_dir}/{args.project}/{args.section_name}.fits',
-    config_file = f'{data_dir}/sextractor_runs/default.sex',
-    param_file = f'{data_dir}/sextractor_runs/default.param',
-    filter_file = f'{data_dir}/sextractor_runs/default.conv', 
-    starnnw_file = f'{data_dir}/sextractor_runs/default.nnw',
+    output_detected = f'{data_dir}/{args.project}/{args.outcat_name}.cat',
+    config_file = f'{params_dir}/sextractor_runs/default.sex',
+    param_file = f'{params_dir}/sextractor_runs/default.param',
+    filter_file = f'{params_dir}/sextractor_runs/default.conv', 
+    starnnw_file = f'{params_dir}/sextractor_runs/default.nnw',
     WLD = WLD_dir,
-    sample_fits = f'{data_dir}/example.fits',
-    one_sq_degree = f'{data_dir}/OneDegSq.fits',
+    simulate_file = f'{WLD_dir}/WeakLensingDeblending/simulate.py',
+    sample_fits = f'{params_dir}/example.fits',
+    one_sq_degree = f'{params_dir}/OneDegSq.fits',
     )
 
     #create project directory if does not exist yet
@@ -214,6 +216,7 @@ def main():
     ######################################################################################################################################################################################################################################
     #simulate the regions. 
 
+
     if args.simulate_all:
         #constants used for the endpoints. 
         endpoint2 = (1.-1./args.num_sections)/2 #in degrees. 
@@ -223,19 +226,24 @@ def main():
 
         #make sure args.num_sections is a multiple of 18000 (pixels)
         image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) 
+        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm'
+        slac_cmd='bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
-                cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps'.format(inputs['one_sq_degree'],args.survey_name,image_width,image_height,args.project,SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
-                slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs['project'],i,j,cmd)
 
-                logger.info(f"Running the slac cmd: {slac_cmd}")
+                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'],SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
 
-                os.system(slac_cmd)
+                curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
+
+                logger.info(f"Running the slac cmd: {curr_slac_cmd}")
+
+                os.system(curr_slac_cmd)
                 
 
     elif args.simulate_single:
-        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps'.format(inputs['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
+        raise NotImplementedError("For now...")
+        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps --no-agn --no-hsm'.format(inputs['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
         slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output-{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs['project'],args.section_name,cmd)
         os.system(slac_cmd)
 
@@ -377,7 +385,7 @@ def main():
         endpoint2 = (1.-1./args.num_sections)/2
         endpoint1 = -endpoint2
 
-        logger.debug(f"Initializing extraction with total height {total_height} and total width {total_width} and endpoints")
+        logger.debug(f"Initializing extraction with total height {total_height} and total width {total_width} and endpoints.")
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
