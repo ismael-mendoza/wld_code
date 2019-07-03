@@ -17,8 +17,10 @@ project_name = 'project'
 # for g in ['-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02']: 
 #for g in [ '0.02']:
 for g in ['0.0']: 
-#for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']: 
-    os.system(f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0 --survey-name {survey_name}')
+#for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']:
+    project_final_name = f"{project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0"
+    #os.system(f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0 --survey-name {survey_name}')
+    os.system(f'python mycode/all-process.py --add-noise-all --num-sections 10 --project {project_final_name} --noise-seed 0 --survey-name {survey_name}')
 
 
 

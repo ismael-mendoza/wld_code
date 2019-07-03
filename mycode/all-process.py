@@ -107,11 +107,11 @@ def main():
                         help=('specify name of the section image when it is a single one.'))
 
 
-    parser.add_argument('--bjob-time', default='10',
+    parser.add_argument('--bjob-time', default='01:00',
                         type=str,
                         help=('Time of jobs to be run in SLAC'))
 
-    parser.add_argument('--max-memory', default='4096',
+    parser.add_argument('--max-memory', default='2000',
                         type=str,
                         help=('Max memory to be used when running a slac process.'))
 
@@ -163,7 +163,7 @@ def main():
     if (args.simulate_all or args.simulate_single) and (args.cosmic_shear_g1==None or args.cosmic_shear_g2==None): 
         raise RuntimeError('Need to include the cosmic shear when simulating.')
 
-    if (args.simulate_all or args.combine or args.process_all or args.add_noise_all or args.extract_all) and not args.num_sections: 
+    if (args.simulate_all or args.combine or args.add_noise_all or args.extract_all) and not args.num_sections: 
         raise RuntimeError('Need to include number of sections when dealing with whole one square degree.')
 
     if (args.add_noise_single or args.add_noise_all) and args.noise_seed==None: 
@@ -227,7 +227,7 @@ def main():
         #make sure args.num_sections is a multiple of 18000 (pixels)
         image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) 
         cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i'
-        slac_cmd='bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'
+        slac_cmd='bsub -M {} -W {} -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
@@ -295,8 +295,8 @@ def main():
         for i in range(args.num_sections):
             for j in range(args.num_sections):
 
-                noisefile_name = '{}/{}_{}_{}.fits'.format(args.project,args.noise_name,i,j)
-                file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
+                noisefile_name = '{}/{}_{}_{}.fits'.format(inputs['project'],args.noise_name,i,j)
+                file_name = '{}/{}_{}_{}.fits'.format(inputs['project'], SECTION_NAME,i,j)
                 add_noise(noisefile_name,file_name,args.noise_seed)
 
     if args.add_noise_single: 
@@ -324,25 +324,27 @@ def main():
         image_width = stamp.shape[0]
         image_height = stamp.shape[1]
 
+        logger.info(f"The image width and height from the stamp are {image_width} and {image_height} respectively.")
+
         #read results obtained (table obtained either from combinining or from single.)
         cat = descwl.output.Reader(file_name).results
         table = cat.table
         detected,matched,indices,distance = cat.match_sextractor(outputfile_name)
         logger.success(f"Successfully matched catalogue with source extractor from sextract output: {outputfile_name}")
 
-        #convert to arcsecs and relative to this image's center (not to absolute)
+        #convert to arcsecs and relative to this image's center (not to absolute, before w/ respect to corner.)
         detected['X_IMAGE'] = (detected['X_IMAGE'] - 0.5*image_width - 0.5)*pixel_scale
         detected['Y_IMAGE'] = (detected['Y_IMAGE'] - 0.5*image_height - 0.5)*pixel_scale
 
         #adjust to absolute image center if necessary, both for measured centers and catalogue centers. 
         if x!=None and y!=None and total_height!=None and total_width!=None: 
-            detected['X_IMAGE']+=x*(total_width*pixel_scale)
+            detected['X_IMAGE']+=x*(total_width*pixel_scale) #need to use arcsecs
             detected['Y_IMAGE']+=y*(total_height*pixel_scale)
 
             table['dx']+=x*(total_width*pixel_scale)
             table['dy']+=y*(total_height*pixel_scale)
 
-        #convert second moments arcsecs, do not have to adjust because we only just it for sigma calculation. 
+        #convert second moments arcsecs, we not have to adjust because we only just it for sigma calculation. 
         detected['X2_IMAGE']*=pixel_scale**2 
         detected['Y2_IMAGE']*=pixel_scale**2 
         detected['XY_IMAGE']*=pixel_scale**2 
@@ -392,10 +394,10 @@ def main():
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
-                file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
-                noisefile_name = '{}/{}_{}_{}.fits'.format(args.project,args.noise_name,i,j)
-                outputfile_name = '{}/{}_{}_{}.cat'.format(args.project,args.outcat_name,i,j)
-                finalfits_name =  '{}/{}_{}_{}.fits'.format(args.project,args.final_name,i,j)
+                file_name = '{}/{}_{}_{}.fits'.format(inputs['project'],SECTION_NAME,i,j)
+                noisefile_name = '{}/{}_{}_{}.fits'.format(inputs['project'],args.noise_name,i,j)
+                outputfile_name = '{}/{}_{}_{}.cat'.format(inputs['project'],args.outcat_name,i,j)
+                finalfits_name =  '{}/{}_{}_{}.fits'.format(inputs['project'],args.final_name,i,j)
                 extract(file_name,noisefile_name, outputfile_name, finalfits_name,total_height,total_width,x,y)
 
     if args.extract_single: 
@@ -417,7 +419,7 @@ def main():
         stamps,past_i = None,None
         for i in range(args.num_sections):
             for j in range(args.num_sections):
-                finalfits_name =  '{}/{}_{}_{}.fits'.format(args.project,args.final_name,i,j)
+                finalfits_name =  '{}/{}_{}_{}.fits'.format(inputs['project'],args.final_name,i,j)
 
                 logger.info(f"Reading one of final fits before combining with name {finalfits_name}")
 
@@ -434,27 +436,28 @@ def main():
 
         logger.success(f"Successfully stacked tables!, wrote them to {inputs['final_fits']}")
         logger.debug(f"Number of galaxies after combining all tables is {len(Table)}")
-
-        #have to adjust to a correct header. 
-        logger.debug(f"adjusting the headers in a weird way of the final fit file. Total width is {total_width} and total height {total_height}")
-
-        f = fits.open(inputs['final_fits'])
-
-        logger.info(f"Reading header from {inputs['sample_fits']}")
-
-        f_sample = fits.open(inputs['sample_fits'])  #sample section of the job_number. 
-        f[0].header = f_sample[0].header
-        f[0].header['E_HEIGHT'] = total_height
-        f[0].header['GE_WIDTH'] = total_width
-
-        #delete older one so no problems at overwriting. 
-        subprocess.call('rm {0}'.format(inputs['final_fits']), shell=True) 
-
-        logger.info(f"Writing final results to {inputs['final_fits']}")
-
-        f.writeto(inputs['final_fits'])
-
         logger.success("All done writing last file.")
+
+
+        # #have to adjust to a correct header. (no reason to do this!, don't care about final image.)
+        # logger.debug(f"adjusting the headers in a weird way of the final fit file. Total width is {total_width} and total height {total_height}")
+
+        # f = fits.open(inputs['final_fits'])
+
+        # logger.info(f"Reading header from {inputs['sample_fits']}")
+
+        # f_sample = fits.open(inputs['sample_fits'])  #sample section of the job_number. 
+        # f[0].header = f_sample[0].header
+        # f[0].header['E_HEIGHT'] = total_height
+        # f[0].header['GE_WIDTH'] = total_width
+
+        # #delete older one so no problems at overwriting. 
+        # subprocess.call('rm {0}'.format(inputs['final_fits']), shell=True) 
+
+        # logger.info(f"Writing final results to {inputs['final_fits']}")
+
+        # f.writeto(inputs['final_fits'])
+
 
 if __name__=='__main__':
     main()
