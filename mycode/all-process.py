@@ -70,15 +70,15 @@ def main():
     parser.add_argument('--combine', action='store_true',
                         help=('Combines regions with given job_number'))
 
-    parser.add_argument('--process-all', action='store_true',
-                        help=('Prepare files needed to run pipeline in one square degree .'))
+    # parser.add_argument('--process-all', action='store_true',
+    #                     help=('Prepare files needed to run pipeline in one square degree .'))
 
 
     parser.add_argument('--simulate-single', action='store_true',
                         help=('Simulate a single chip with width,height specified with single-image-height,etc.'))
 
-    parser.add_argument('--process-single', action='store_true',
-                        help=('Prepare files needed to run pipeline in a single chip.'))
+    # parser.add_argument('--process-single', action='store_true',
+    #                     help=('Prepare files needed to run pipeline in a single chip.'))
 
     parser.add_argument('--extract-single', action='store_true',
                         help=('Classifies into detected and ambiously blended for a single section.'))
@@ -226,13 +226,13 @@ def main():
 
         #make sure args.num_sections is a multiple of 18000 (pixels)
         image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) 
-        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm'
+        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i'
         slac_cmd='bsub -M {} -W {}:00 -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
 
-                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'],SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
+                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
 
                 curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
 
@@ -242,35 +242,38 @@ def main():
                 
 
     elif args.simulate_single:
-        raise NotImplementedError("For now...")
+        raise NotImplementedError("For now this is not implemented.")
         cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps --no-agn --no-hsm'.format(inputs['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
         slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output-{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs['project'],args.section_name,cmd)
         os.system(slac_cmd)
 
     ######################################################################################################################################################################################################################################
     #trim extra HDUs (containing individual galaxy partials, etc.) to reduce file size. 
-    def process(file_name): 
-        logger.info(f"Delete the third HDU and on from {file_name}")
-
-        hdus = fits.open(file_name)
-        del hdus[2:]
-        subprocess.call('rm {}'.format(file_name),shell=True)  #delete old file 
-
-        logger.info(f"Creating {file_name} w/out the HDUs previously deleted...")
-
-        hdus.writeto(file_name)
-        hdus.close()
+    #this is obsolete if we just use the --no-stamps argument, and also better to use since never occupy too much space.
 
 
-    if args.process_all: 
-        for i in range(args.num_sections):
-            for j in range(args.num_sections):
-                file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
-                process(file_name)
+    # def process(file_name): 
+    #     logger.info(f"Delete the third HDU and on from {file_name}")
+
+    #     hdus = fits.open(file_name)
+    #     del hdus[2:]
+    #     subprocess.call('rm {}'.format(file_name),shell=True)  #delete old file 
+
+    #     logger.info(f"Creating {file_name} w/out the HDUs previously deleted...")
+
+    #     hdus.writeto(file_name)
+    #     hdus.close()
 
 
-    if args.process_single: 
-        process(inputs['single_section'])
+    # if args.process_all: 
+    #     for i in range(args.num_sections):
+    #         for j in range(args.num_sections):
+    #             file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
+    #             process(file_name)
+
+
+    # if args.process_single: 
+    #     process(inputs['single_section'])
 
 
     ######################################################################################################################################################################################################################################

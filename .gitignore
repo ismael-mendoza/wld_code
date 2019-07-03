@@ -2,3 +2,4 @@
 *.fits 
 *.png
 WeakLensingDeblending*
+*.ipynb_checkpoints
