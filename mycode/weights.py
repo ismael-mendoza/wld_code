@@ -46,10 +46,10 @@ def wmean_func(dbt, cat, component, iso_or_grp):
     assert iso_or_grp in ['iso', 'grp'], 'iso_or_grp received invalied argument'
     
     suffix = get_iso_or_grp_suffix(iso_or_grp)
-    weights = get_weights(args, component, iso_or_grp)
+    weights = get_weights(cat, component, iso_or_grp)
     return np.sum(weights*dbt)/np.sum(weights) 
 
-def wmean(dbt, args, component, iso_or_grp): 
+def wmean(args, component, iso_or_grp): 
     return lambda dbt: wmean_func(dbt, args, component, iso_or_grp)
 
 

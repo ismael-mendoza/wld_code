@@ -1,4 +1,4 @@
-#####This file is to be run when rooted in WLD. 
+#!/usr/bin/env python
 
 import numpy as np 
 import os
@@ -11,33 +11,6 @@ import astropy.io.fits as fits
 import astropy.table as astroTable 
 from WeakLensingDeblending import descwl 
 from loguru import logger 
-
-@logger.catch
-def detected_ambiguous_blends(table,matched_indices,detected):
-    """
-    Algorithm for ambiguous blends - returns indices of ambiguously blended objects in terms of the table of full catalogue. 
-
-    Ambiguously blended means that at least one non-detected true object is less than a unit of effective distance away from an ambiguous object. 
-
-    table: table containing entries of all galaxies of the catalog. 
-    matched_indices: indices of galaxies in table that were detected by SExtractor (primary  matched)
-    detected: Table of detected objects by SExtractor which also contains their information as measured by SExtractor. 
-    """
-    ambiguous_blends_indices = []
-    for index,gal_row in enumerate(table):
-        if gal_row['match'] == -1: #loop through true not primarily matched objects. 
-            
-            #calculate of effective distances of true non-primary match object with all primarily matched objects. 
-            effective_distances = list(np.sqrt((detected['X_IMAGE']-gal_row['dx'])**2 + (detected['Y_IMAGE']-gal_row['dy'])**2)/(detected['SIGMA'] + gal_row['psf_sigm']))
-            
-            #mark all objects with effective distance <1 as ambiguosly blended. 
-            marked_indices = [matched_indices[i] for i,distance in enumerate(effective_distances) if distance < 1.]
-            
-            #if at least one index was marked as ambiguous, add both the primarily match object and the true non-primary object as ambiguous. 
-            if len(marked_indices) > 0:
-                ambiguous_blends_indices.append(index)
-                ambiguous_blends_indices.extend(marked_indices)
-    return set(ambiguous_blends_indices)
 
 @logger.catch
 def main():
@@ -58,6 +31,16 @@ def main():
                                      formatter_class=(
                                      argparse.ArgumentDefaultsHelpFormatter))
 
+    #required arugments. 
+    parser.add_argument('--project', required=True,
+                        type=str,
+                        help=('Project name, directory name for all your files.'))
+
+    parser.add_argument('--num-sections', required=True, 
+                        type=int,
+                        help=('Number of squares along one dimension to divide the one square degree.'))
+
+    #main commands that run multiple simulations and combine them. 
     parser.add_argument('--simulate-all', action='store_true',
                         help=('Simulates the requested regions with given job_number using multiple batch jobs.'))
 
@@ -70,15 +53,9 @@ def main():
     parser.add_argument('--combine', action='store_true',
                         help=('Combines regions with given job_number'))
 
-    # parser.add_argument('--process-all', action='store_true',
-    #                     help=('Prepare files needed to run pipeline in one square degree .'))
-
-
+    #commands that run a single simulation, used for testing. 
     parser.add_argument('--simulate-single', action='store_true',
                         help=('Simulate a single chip with width,height specified with single-image-height,etc.'))
-
-    # parser.add_argument('--process-single', action='store_true',
-    #                     help=('Prepare files needed to run pipeline in a single chip.'))
 
     parser.add_argument('--extract-single', action='store_true',
                         help=('Classifies into detected and ambiously blended for a single section.'))
@@ -107,14 +84,7 @@ def main():
                         help=('specify name of the section image when it is a single one.'))
 
 
-    parser.add_argument('--bjob-time', default='01:00',
-                        type=str,
-                        help=('Time of jobs to be run in SLAC'))
-
-    parser.add_argument('--max-memory', default='2000',
-                        type=str,
-                        help=('Max memory to be used when running a slac process.'))
-
+    #arguments for specifying simulation. 
     parser.add_argument('--cosmic-shear-g1', default=None,
                         type=float,
                         help=('cosmic shear g1'))
@@ -122,6 +92,15 @@ def main():
     parser.add_argument('--cosmic-shear-g2', default=None, 
                         type=float,
                         help=('cosmic shear g2'))
+
+    parser.add_argument('--variations-x', default=None, 
+                        type=float,
+                        help=('Step size for centroid to use in simulation.'))
+
+    parser.add_argument('--variations-g', default=0.03, 
+                        type=float,
+                        help=('Step size for shear to use in simulation.'))
+
 
     parser.add_argument('--noise-seed', default=None,
                         type=int,
@@ -131,14 +110,14 @@ def main():
                         type=str, choices=['LSST','HSC','DES'],
                         help=('Select survey to use.'))
 
-    parser.add_argument('--num-sections', default=None, 
-                        type=int,
-                        help=('Number of squares along one dimension to divide the one square degree.'))
-
-
-    parser.add_argument('--project', required=True,
+    #additional names and arguments for running remotely. 
+    parser.add_argument('--bjob-time', default='01:30',
                         type=str,
-                        help=('Project name, directory name for all your files.'))
+                        help=('Time of jobs to be run in SLAC'))
+
+    parser.add_argument('--max-memory', default='2000',
+                        type=str,
+                        help=('Max memory to be used when running a slac process.'))
 
     parser.add_argument('--noise-name', default='noise_image',
                         type=str,
@@ -152,9 +131,6 @@ def main():
                         type=str,
                         help=('specify name of the final fits'))
 
-    parser.add_argument('--table-name', default='table',
-                        type=str,
-                        help=('specify name of the table'))
 
 
     args = parser.parse_args()
@@ -202,7 +178,6 @@ def main():
     starnnw_file = f'{params_dir}/sextractor_runs/default.nnw',
     WLD = WLD_dir,
     simulate_file = f'{WLD_dir}/WeakLensingDeblending/simulate.py',
-    sample_fits = f'{params_dir}/example.fits',
     one_sq_degree = f'{params_dir}/OneDegSq.fits',
     )
 
@@ -226,13 +201,13 @@ def main():
 
         #make sure args.num_sections is a multiple of 18000 (pixels)
         image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) 
-        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i'
+        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {} --variations-x {}'
         slac_cmd='bsub -M {} -W {} -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
 
-                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2)
+                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g, args.variations_x)
 
                 curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
 
@@ -242,38 +217,15 @@ def main():
                 
 
     elif args.simulate_single:
-        raise NotImplementedError("For now this is not implemented.")
-        cmd = './simulate.py --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --ra-center {} --dec-center {} --verbose --no-stamps --no-agn --no-hsm'.format(inputs['one_sq_degree'],args.survey_name,args.single_image_width,args.single_image_height,inputs['single_section'],args.cosmic_shear_g1,args.cosmic_shear_g2,args.single_image_ra_center,args.single_image_dec_center)
-        slac_cmd = 'bsub -M {} -W {}:00 -o "{}/output-{}.txt" -r "{}"'.format(args.max_memory,args.bjob_time,inputs['project'],args.section_name,cmd)
+        assert args.num_sections == 1, "Remember that --simulate-single creates a single section."
+
+        cmd=f'python {inputs['simulate_file']} --catalog-name {inputs['one_sq_degree']} --survey-name {args.survey_name} --image-width {args.single_image_width} --image-height {args.single_image_height} --output-name {inputs['single_section']} --ra-center 0 --dec-center 0 --calculate-bias --cosmic-shear-g1 {args.cosmic_shear_g1} --cosmic-shear-g2 {args.cosmic_shear_g2} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {args.variations_g} --variations-x {args.variations_x}'
+        output_file = f"{inputs['project']}/output_sim.txt"
+        
+        slac_cmd=f'bsub -M {args.max_memory} -W {args.bjob_time} -o {output_file} -r "{cmd}"'
+        logger.info(f"Running the slac cmd: {slac_cmd}")
+
         os.system(slac_cmd)
-
-    ######################################################################################################################################################################################################################################
-    #trim extra HDUs (containing individual galaxy partials, etc.) to reduce file size. 
-    #this is obsolete if we just use the --no-stamps argument, and also better to use since never occupy too much space.
-
-
-    # def process(file_name): 
-    #     logger.info(f"Delete the third HDU and on from {file_name}")
-
-    #     hdus = fits.open(file_name)
-    #     del hdus[2:]
-    #     subprocess.call('rm {}'.format(file_name),shell=True)  #delete old file 
-
-    #     logger.info(f"Creating {file_name} w/out the HDUs previously deleted...")
-
-    #     hdus.writeto(file_name)
-    #     hdus.close()
-
-
-    # if args.process_all: 
-    #     for i in range(args.num_sections):
-    #         for j in range(args.num_sections):
-    #             file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
-    #             process(file_name)
-
-
-    # if args.process_single: 
-    #     process(inputs['single_section'])
 
 
     ######################################################################################################################################################################################################################################
@@ -305,7 +257,35 @@ def main():
     ###################################################################################################################
     #source extract and detect ambiguous blends 
 
-    def extract(file_name,noisefile_name,outputfile_name,finalfits_name,total_height=None,total_width=None,x=None,y=None):
+    @logger.catch
+    def detected_ambiguous_blends(table,matched_indices,detected):
+        """
+        Algorithm for ambiguous blends - returns indices of ambiguously blended objects in terms of the table of full catalogue. 
+
+        Ambiguously blended means that at least one non-detected true object is less than a unit of effective distance away from an ambiguous object. 
+
+        table: table containing entries of all galaxies of the catalog. 
+        matched_indices: indices of galaxies in table that were detected by SExtractor (primary  matched)
+        detected: Table of detected objects by SExtractor which also contains their information as measured by SExtractor. 
+        """
+        ambiguous_blends_indices = []
+        for index,gal_row in enumerate(table):
+            if gal_row['match'] == -1: #loop through true not primarily matched objects. 
+                
+                #calculate of effective distances of true non-primary match object with all primarily matched objects. 
+                effective_distances = list(np.sqrt((detected['X_IMAGE']-gal_row['dx'])**2 + (detected['Y_IMAGE']-gal_row['dy'])**2)/(detected['SIGMA'] + gal_row['psf_sigm']))
+                
+                #mark all objects with effective distance <1 as ambiguosly blended. 
+                marked_indices = [matched_indices[i] for i,distance in enumerate(effective_distances) if distance < 1.]
+                
+                #if at least one index was marked as ambiguous, add both the primarily match object and the true non-primary object as ambiguous. 
+                if len(marked_indices) > 0:
+                    ambiguous_blends_indices.append(index)
+                    ambiguous_blends_indices.extend(marked_indices)
+        return set(ambiguous_blends_indices)
+
+    @logger.catch
+    def extract(file_name,noisefile_name,outputfile_name,finalfits_name, num_sections, total_height,total_width,x,y):
 
         logger.info(f"Will source extract galaxies from noise file {noisefile_name}")
 
@@ -321,8 +301,11 @@ def main():
         #read noise image to figure out image bounds. 
         fits_section = fitsio.FITS(noisefile_name)
         stamp = fits_section[0].read()
-        image_width = stamp.shape[0]
+        image_width = stamp.shape[0] #pixels 
         image_height = stamp.shape[1]
+
+
+        assert image_width == total_width/num_sections and image_height == total_height/num_sections, "Something is wrong with the heights specified."
 
         logger.info(f"The image width and height from the stamp are {image_width} and {image_height} respectively.")
 
@@ -337,14 +320,21 @@ def main():
         detected['Y_IMAGE'] = (detected['Y_IMAGE'] - 0.5*image_height - 0.5)*pixel_scale
 
         #adjust to absolute image center if necessary, both for measured centers and catalogue centers. 
-        if x!=None and y!=None and total_height!=None and total_width!=None: 
-            detected['X_IMAGE']+=x*(total_width*pixel_scale) #need to use arcsecs
-            detected['Y_IMAGE']+=y*(total_height*pixel_scale)
+        detected['X_IMAGE']+=x*(total_width*pixel_scale) #need to use arcsecs
+        detected['Y_IMAGE']+=y*(total_height*pixel_scale)
 
-            table['dx']+=x*(total_width*pixel_scale)
-            table['dy']+=y*(total_height*pixel_scale)
+        table['dx']+=x*(total_width*pixel_scale)
+        table['dy']+=y*(total_height*pixel_scale)
 
-        #convert second moments arcsecs, we not have to adjust because we only just it for sigma calculation. 
+        #also adjust the xmin,xmax, ymin, ymax bounding box edges, because why not? 
+        #remember these are in pixels; xmin, xmax relative to left edge; ymin,ymax relative to right edge. 
+        table['xmin']+= int(x*total_width + total_width/2 - image_width/2 )
+        table['xmax']+= int(x*total_width + total_width/2 - image_width/2 )
+        table['ymin']+= int(x*total_height + total_height/2 - image_height/2 )
+        table['ymax']+= int(x*total_height + total_height/2 - image_height/2)
+
+        #convert second moments to arcsecs. 
+        #Not adjust relative to center, because only used for sigma calculation. 
         detected['X2_IMAGE']*=pixel_scale**2 
         detected['Y2_IMAGE']*=pixel_scale**2 
         detected['XY_IMAGE']*=pixel_scale**2 
@@ -362,17 +352,15 @@ def main():
         #find the indices of the ambiguous blends. 
         logger.info("Finding indices/ids that are ambiguosly blended")
         ambg_blends = detected_ambiguous_blends(table, indices, detected)
-        ambg_blends_indices = set(list(ambg_blends))
-        ambg_blends_ids = list(table[ambg_blends_indices]['db_id'])
+        # ambg_blends_indices = list(ambg_blends)
+        # ambg_blends_ids = list(table[ambg_blends_indices]['db_id'])
         logger.success("All indices have been found")
 
-
-        #add columns to table of undetected and ambiguosly blended 
         logger.info(f"Adding column to original table and writing it to {finalfits_name}")
 
         ambigous_blend_column = []
         for i,gal_row in enumerate(table):
-            if i in ambg_blends_indices:
+            if i in ambg_blends:
                 ambigous_blend_column.append(True)
             else: 
                 ambigous_blend_column.append(False)
@@ -384,7 +372,7 @@ def main():
         table.write(finalfits_name)
 
 
-    if args.extract_all: 
+    if args.extract_all:
         total_height = 1. * 60 * 60 / pixel_scale #in pixels
         total_width = 1. * 60 * 60 / pixel_scale
         endpoint2 = (1.-1./args.num_sections)/2
@@ -398,14 +386,15 @@ def main():
                 noisefile_name = '{}/{}_{}_{}.fits'.format(inputs['project'],args.noise_name,i,j)
                 outputfile_name = '{}/{}_{}_{}.cat'.format(inputs['project'],args.outcat_name,i,j)
                 finalfits_name =  '{}/{}_{}_{}.fits'.format(inputs['project'],args.final_name,i,j)
-                extract(file_name,noisefile_name, outputfile_name, finalfits_name,total_height,total_width,x,y)
+                extract(file_name,noisefile_name, outputfile_name, finalfits_name, args.num_sections, total_height,total_width,x,y)
 
     if args.extract_single: 
+        raise NotImplementedError("not implemented yet...")
         extract(inputs['single_section'],inputs['noise_image'], inputs['output_detected'], inputs['final_fits'])
 
 
     ##########################################################################################################################################################################################
-    #combine 16 regions into image and table. 
+    #combine 16 regions into image and table.
     if args.combine:
 
         #############
@@ -439,29 +428,37 @@ def main():
         logger.success("All done writing last file.")
 
 
-        # #have to adjust to a correct header. (no reason to do this!, don't care about final image.)
-        # logger.debug(f"adjusting the headers in a weird way of the final fit file. Total width is {total_width} and total height {total_height}")
-
-        # f = fits.open(inputs['final_fits'])
-
-        # logger.info(f"Reading header from {inputs['sample_fits']}")
-
-        # f_sample = fits.open(inputs['sample_fits'])  #sample section of the job_number. 
-        # f[0].header = f_sample[0].header
-        # f[0].header['E_HEIGHT'] = total_height
-        # f[0].header['GE_WIDTH'] = total_width
-
-        # #delete older one so no problems at overwriting. 
-        # subprocess.call('rm {0}'.format(inputs['final_fits']), shell=True) 
-
-        # logger.info(f"Writing final results to {inputs['final_fits']}")
-
-        # f.writeto(inputs['final_fits'])
-
-
 if __name__=='__main__':
     main()
 
+
+######################################################################################################################################################################################################################################
+#trim extra HDUs (containing individual galaxy partials, etc.) to reduce file size. 
+#this is obsolete if we just use the --no-stamps argument, and also better to use since never occupy too much space.
+
+
+# def process(file_name): 
+#     logger.info(f"Delete the third HDU and on from {file_name}")
+
+#     hdus = fits.open(file_name)
+#     del hdus[2:]
+#     subprocess.call('rm {}'.format(file_name),shell=True)  #delete old file 
+
+#     logger.info(f"Creating {file_name} w/out the HDUs previously deleted...")
+
+#     hdus.writeto(file_name)
+#     hdus.close()
+
+
+# if args.process_all: 
+#     for i in range(args.num_sections):
+#         for j in range(args.num_sections):
+#             file_name = '{}/{}_{}_{}.fits'.format(args.project,SECTION_NAME,i,j)
+#             process(file_name)
+
+
+# if args.process_single: 
+#     process(inputs['single_section'])
 
 
 
@@ -472,3 +469,23 @@ if __name__=='__main__':
 # noise = galsim.PoissonNoise(rng = generator, sky_level = results.survey.mean_sky_level)
 # stamp_galsim = galsim.Image(array=stamp,wcs=galsim.PixelScale(pixel_scale),bounds=galsim.BoundsI(xmin=0, xmax=stamp.shape[0]-1, ymin=0, ymax=stamp.shape[1]-1))
 # stamp_galsim.addNoise(noise)
+
+
+# #have to adjust to a correct header. (no reason to do this!, don't care about final image.)
+# logger.debug(f"adjusting the headers in a weird way of the final fit file. Total width is {total_width} and total height {total_height}")
+
+# f = fits.open(inputs['final_fits'])
+
+# logger.info(f"Reading header from {inputs['sample_fits']}")
+
+# f_sample = fits.open(inputs['sample_fits'])  #sample section of the job_number. 
+# f[0].header = f_sample[0].header
+# f[0].header['E_HEIGHT'] = total_height
+# f[0].header['GE_WIDTH'] = total_width
+
+# #delete older one so no problems at overwriting. 
+# subprocess.call('rm {0}'.format(inputs['final_fits']), shell=True) 
+
+# logger.info(f"Writing final results to {inputs['final_fits']}")
+
+# f.writeto(inputs['final_fits'])

@@ -2,7 +2,8 @@ import os
 
 
 survey_name = 'LSST'
-project_name = 'project'
+project_name = 'project_ss1'
+data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
 
 ##step size to try: 
 #0.001
@@ -15,13 +16,22 @@ project_name = 'project'
 # for g in ['-.005','-.01','-.015','-.02','0.','.005','.01','.015','.02']: 
 #for g in ['-0.05','-0.10']: 
 # for g in ['-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02']: 
-#for g in [ '0.02']:
-for g in ['0.0']: 
+# for g in ['0.0']: 
 #for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']:
-    project_final_name = f"{project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0"
-    #os.system(f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0 --survey-name {survey_name}')
-    os.system(f'python mycode/all-process.py --add-noise-all --num-sections 10 --project {project_final_name} --noise-seed 0 --survey-name {survey_name}')
+# for g in ['0.0', '0.02']:
+#     project_final_name = f"{project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0"
+#     # os.system(f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0 --survey-name {survey_name}')
+#     cmd = f'python mycode/all-process.py --add-noise-all --extract-all --combine --num-sections 10 --project {project_final_name} --noise-seed 0 --survey-name {survey_name}'
+#     output_file = os.path.join(data_dir, project_final_name, "output-final.txt")
+#     os.system(f'bsub -W 00:50 -M 2000 -o {output_file} -r "{cmd}"')
 
+
+for g in ['0.0', '0.02']:
+    project_final_name = f"{project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0"
+    os.system(f'python mycode/all-process.py --simulate-single --num-sections 1 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0 --survey-name {survey_name} --variations-g 0.001')
+#    cmd = f'python mycode/all-process.py --add-noise-all --extract-all --combine --num-sections 10 --project {project_final_name} --noise-seed 0 --survey-name {survey_name}'
+ #   output_file = os.path.join(data_dir, project_final_name, "output-final.txt")
+  #  os.system(f'bsub -W 00:50 -M 2000 -o {output_file} -r "{cmd}"')
 
 
 ####################################### the rest #######################################
