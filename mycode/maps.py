@@ -16,7 +16,7 @@ from importlib import reload
 import galsim
 from collections import defaultdict
 
-dflt_sorting = ['grp_id', 'db_id']
+dflt_sorting = ['db_id']
 
 
 #directories that we will be using 
@@ -31,22 +31,22 @@ mycode = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/mycode',
 
 #### Prepare input 
 files = dict(
-final_fitsLSST1 = os.path.join(locations['data'], 'projectLSST-g1_-100-g2_0/final_fits.fits'), 
-final_fitsLSST2 = os.path.join(locations['data'], 'projectLSST-g1_-50-g2_0/final_fits.fits'), 
-final_fitsLSST3 = os.path.join(locations['data'], 'projectLSST-g1_-20-g2_0/final_fits.fits'), 
-final_fitsLSST4 = os.path.join(locations['data'], 'projectLSST-g1_-15-g2_0/final_fits.fits'), 
-final_fitsLSST5 = os.path.join(locations['data'], 'projectLSST-g1_-10-g2_0/final_fits.fits'), 
-final_fitsLSST6 = os.path.join(locations['data'], 'projectLSST-g1_-5-g2_0/final_fits.fits'), 
-final_fitsLSST7 = os.path.join(locations['data'], 'projectLSST-g1_0-g2_0/final_fits.fits'), 
-final_fitsLSST8 = os.path.join(locations['data'], 'projectLSST-g1_5-g2_0/final_fits.fits'), 
-final_fitsLSST9 = os.path.join(locations['data'], 'projectLSST-g1_10-g2_0/final_fits.fits'), 
-final_fitsLSST10 = os.path.join(locations['data'], 'projectLSST-g1_15-g2_0/final_fits.fits'), 
-final_fitsLSST11 = os.path.join(locations['data'], 'projectLSST-g1_20-g2_0/final_fits.fits'), 
-final_fitsLSST12 = os.path.join(locations['data'], 'projectLSST-g1_50-g2_0/final_fits.fits'), 
-final_fitsLSST13 = os.path.join(locations['data'], 'projectLSST-g1_100-g2_0/final_fits.fits'), 
+# final_fitsLSST1 = os.path.join(locations['data'], 'projectLSST-g1_-100-g2_0/final_fits.fits'), 
+# final_fitsLSST2 = os.path.join(locations['data'], 'projectLSST-g1_-50-g2_0/final_fits.fits'), 
+final_fitsLSSTn20 = os.path.join(locations['data'], 'projectLSST-g1_-20-g2_0/final_fits.fits'), 
+final_fitsLSSTn15 = os.path.join(locations['data'], 'projectLSST-g1_-15-g2_0/final_fits.fits'), 
+final_fitsLSSTn10 = os.path.join(locations['data'], 'projectLSST-g1_-10-g2_0/final_fits.fits'), 
+final_fitsLSSTn05 = os.path.join(locations['data'], 'projectLSST-g1_-5-g2_0/final_fits.fits'), 
+final_fitsLSST00 = os.path.join(locations['data'], 'projectLSST-g1_0-g2_0/final_fits.fits'), 
+final_fitsLSST05 = os.path.join(locations['data'], 'projectLSST-g1_5-g2_0/final_fits.fits'), 
+final_fitsLSST10 = os.path.join(locations['data'], 'projectLSST-g1_10-g2_0/final_fits.fits'), 
+final_fitsLSST15 = os.path.join(locations['data'], 'projectLSST-g1_15-g2_0/final_fits.fits'), 
+final_fitsLSST20 = os.path.join(locations['data'], 'projectLSST-g1_20-g2_0/final_fits.fits'), 
+# final_fitsLSST12 = os.path.join(locations['data'], 'projectLSST-g1_50-g2_0/final_fits.fits'), 
+# final_fitsLSST13 = os.path.join(locations['data'], 'projectLSST-g1_100-g2_0/final_fits.fits'), 
     
 
-final_fitsLSST1_ss1 = os.path.join(locations['data'],'projectLSST-g1_-20-g2_0_ss1/final_fits.fits'),
+final_fitsLSST1n20_ss1 = os.path.join(locations['data'],'projectLSST-g1_-20-g2_0_ss1/final_fits.fits'),
 final_fitsLSST2_ss1 = os.path.join(locations['data'],'projectLSST-g1_-15-g2_0_ss1/final_fits.fits'),
 final_fitsLSST3_ss1 = os.path.join(locations['data'],'projectLSST-g1_-10-g2_0_ss1/final_fits.fits'),
 final_fitsLSST4_ss1 = os.path.join(locations['data'],'projectLSST-g1_-5-g2_0_ss1/final_fits.fits'),
@@ -58,20 +58,21 @@ final_fitsLSST9_ss1 = os.path.join(locations['data'],'projectLSST-g1_20-g2_0_ss1
 )
 
 
-def mad(arr):
-    """ Median Absolute Deviation: a "Robust" version of standard deviation.
-        Indices variabililty of the sample.
-        https://en.wikipedia.org/wiki/Median_absolute_deviation 
-    """
-    arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
-    med = np.median(arr)
-    return np.median(np.abs(arr - med))
+# def mad(arr):
+#     """ Median Absolute Deviation: a "Robust" version of standard deviation.
+#         Indices variabililty of the sample.
+#         https://en.wikipedia.org/wiki/Median_absolute_deviation 
+#     """
+#     arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
+#     med = np.median(arr)
+#     return np.median(np.abs(arr - med))
 
 
-def retrieve_cats(basename, which = [] , only_zero_shear = False): 
-    cats = {} 
+def retrieve_cats(basename, which=[], only_zero_shear = False): 
+    dcats = {}
 
     if only_zero_shear: 
+        raise NotImplementedError()
         if basename == 'final_fitsLSST': 
             print("retrieving zero shear cat from default step size catalogue...")
             cat = Table.read(files["final_fitsLSST7"])
@@ -88,7 +89,10 @@ def retrieve_cats(basename, which = [] , only_zero_shear = False):
         return [cat]
 
     else: 
-        raise NotImplementedError()
+        for suffix in which: 
+            print("reading", basename+suffix)
+            dcats[suffix] = Table.read(files[basename+suffix])
+        return dcats
 
 
 #get hash map from param to list of indices 
@@ -161,11 +165,19 @@ def selection_filter(cats,filters,zero_shear_cat):
     # we just select the same galaxies found in the filtered zero shear cat. 
     for cat in cats: 
         filter_cats.append(get_slice(cat, 'db_id', zero_ids))
-        
-    return filter_cats #double make sure all ids are the same. 
 
-#this function returns the rows of cat that are in selection. 
-def get_slice(cat, field, selection,non_selection=False): 
+    icats = get_intersection_cats(filter_cats) #shouldn't do anything. 
+    fcats = [] 
+    for cat in icats: #sort them.
+        cat.sort(dflt_sorting)
+        fcats.append(cat)
+
+    return fcats #make sure all ids are the same. 
+
+def get_slice(cat, field, selection,non_selection=False):  
+    """
+    this function returns the rows of cat that are in selection. 
+    """
     selection = set(list(selection)) #make sure it's a set. 
     bool_slice = []
     for data in cat[field]: 
@@ -176,9 +188,12 @@ def get_slice(cat, field, selection,non_selection=False):
     else: 
         return cat[bool_slice], cat[np.invert(bool_slice)]
 
-#gets the ids of the galaxies that is contained in each cat in cats and returns a new list new_cats 
-#that contains only this galaxies
+
 def get_intersection_cats(cats,other_cats=False): 
+    """
+    gets the ids of the galaxies that is contained in each cat in cats and returns a new list new_cats 
+    that contains only this galaxies
+    """
     intersection = set() 
     for i,cat in enumerate(cats): 
         if i==0: 
@@ -248,6 +263,8 @@ notdetc_and_notambig = lambda cat: cat[(cat['ambig_blend'] == False) & (cat['mat
 detc_and_ambig = lambda cat: cat[(cat['ambig_blend'] == True) & (cat['match'] != -1)]
 notdetc_and_ambig = lambda cat: cat[(cat['ambig_blend'] == True) & (cat['match'] == -1)]
 best = detc_and_notambig
+
+low_cond = lambda cat: cat[cat['cond_num_grp'] < 1e14]
 
 #filter rare (bad) objs. Which will not be good for our purposes. 
 not_bad = lambda cat: cat[(cat['snr_grp'] != 0) & (cat['ds_grp']!= np.inf) ]

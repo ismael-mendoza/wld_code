@@ -93,9 +93,9 @@ def main():
                         type=float,
                         help=('cosmic shear g2'))
 
-    parser.add_argument('--variations-x', default=None, 
-                        type=float,
-                        help=('Step size for centroid to use in simulation.'))
+    # parser.add_argument('--variations-x', default=None, 
+    #                     type=float,
+    #                     help=('Step size for centroid to use in simulation.'))
 
     parser.add_argument('--variations-g', default=0.03, 
                         type=float,
@@ -111,11 +111,11 @@ def main():
                         help=('Select survey to use.'))
 
     #additional names and arguments for running remotely. 
-    parser.add_argument('--bjob-time', default='01:30',
+    parser.add_argument('--bjob-time', default='02:00',
                         type=str,
                         help=('Time of jobs to be run in SLAC'))
 
-    parser.add_argument('--max-memory', default='2000',
+    parser.add_argument('--max-memory', default='4000MB',
                         type=str,
                         help=('Max memory to be used when running a slac process.'))
 
@@ -200,26 +200,30 @@ def main():
         total_width = 1. * 60 * 60 / pixel_scale
 
         #make sure args.num_sections is a multiple of 18000 (pixels)
-        image_width,image_height = int(total_width/args.num_sections),int(total_height/args.num_sections) 
-        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{}_{}_{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {} --variations-x {}'
+        image_width,image_height = int(total_width/args.num_sections), int(total_height/args.num_sections) 
+        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {}'
         slac_cmd='bsub -M {} -W {} -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
 
-                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], SECTION_NAME,i,j,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g, args.variations_x)
+                output_name = "{}_{}_{}".format(SECTION_NAME,i,j)
 
-                curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
+                if output_name=='section_2_7':
 
-                logger.info(f"Running the slac cmd: {curr_slac_cmd}")
+                    curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], output_name,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g)
 
-                os.system(curr_slac_cmd)
+                    curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
+
+                    logger.info(f"Running the slac cmd: {curr_slac_cmd}")
+
+                    os.system(curr_slac_cmd)
                 
 
     elif args.simulate_single:
         assert args.num_sections == 1, "Remember that --simulate-single creates a single section."
 
-        cmd=f'python {inputs['simulate_file']} --catalog-name {inputs['one_sq_degree']} --survey-name {args.survey_name} --image-width {args.single_image_width} --image-height {args.single_image_height} --output-name {inputs['single_section']} --ra-center 0 --dec-center 0 --calculate-bias --cosmic-shear-g1 {args.cosmic_shear_g1} --cosmic-shear-g2 {args.cosmic_shear_g2} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {args.variations_g} --variations-x {args.variations_x}'
+        cmd=f"python {inputs['simulate_file']} --catalog-name {inputs['one_sq_degree']} --survey-name {args.survey_name} --image-width {args.single_image_width} --image-height {args.single_image_height} --output-name {inputs['single_section']} --ra-center 0 --dec-center 0 --calculate-bias --cosmic-shear-g1 {args.cosmic_shear_g1} --cosmic-shear-g2 {args.cosmic_shear_g2} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {args.variations_g}"
         output_file = f"{inputs['project']}/output_sim.txt"
         
         slac_cmd=f'bsub -M {args.max_memory} -W {args.bjob_time} -o {output_file} -r "{cmd}"'

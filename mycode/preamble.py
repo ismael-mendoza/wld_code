@@ -12,7 +12,6 @@ import scipy.optimize as opt
 from scipy import linalg
 import pickle 
 import os 
-from importlib import reload
 import galsim 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
