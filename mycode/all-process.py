@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
+import sys 
 import numpy as np 
 import os
-import sys 
 import argparse
 import subprocess
 import fitsio
 import astropy 
 import astropy.io.fits as fits
 import astropy.table as astroTable 
-from WeakLensingDeblending import descwl 
+from WeakLensingDeblending import descwl
 from loguru import logger 
 
 @logger.catch
@@ -209,15 +209,13 @@ def main():
 
                 output_name = "{}_{}_{}".format(SECTION_NAME,i,j)
 
-                if output_name=='section_2_7':
+                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], output_name,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g)
 
-                    curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], output_name,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g)
+                curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
 
-                    curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
-
-                    logger.info(f"Running the slac cmd: {curr_slac_cmd}")
-
-                    os.system(curr_slac_cmd)
+                logger.info(f"Running the slac cmd: {curr_slac_cmd}")
+                #print(curr_slac_cmd)
+                #os.system(curr_slac_cmd)
                 
 
     elif args.simulate_single:
