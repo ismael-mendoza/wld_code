@@ -115,7 +115,7 @@ def main():
                         type=str,
                         help=('Time of jobs to be run in SLAC'))
 
-    parser.add_argument('--max-memory', default='4000MB',
+    parser.add_argument('--max-memory', default='4096MB',
                         type=str,
                         help=('Max memory to be used when running a slac process.'))
 
@@ -199,23 +199,31 @@ def main():
         total_height = 1. * 60 * 60 / pixel_scale #in pixels
         total_width = 1. * 60 * 60 / pixel_scale
 
-        #make sure args.num_sections is a multiple of 18000 (pixels)
+        assert total_width % args.num_sections == 0 and total_height % args.num_sections == 0
+
         image_width,image_height = int(total_width/args.num_sections), int(total_height/args.num_sections) 
-        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {}/{} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {}'
+        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --equilibrate --filter-band i --variations-g {}'
         slac_cmd='bsub -M {} -W {} -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
             for j,y in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
 
-                output_name = "{}_{}_{}".format(SECTION_NAME,i,j)
+                output_name = "{}/{}_{}_{}".format(inputs['project'], SECTION_NAME,i,j)
+                output_file = output_name +  '.fits'
 
-                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, inputs['project'], output_name,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g)
+                if os.path.exists(output_file):
+                    if os.path.getsize(output_file) > 0: 
+                        continue
+                    else: 
+                        os.system(f"rm {inputs['project']}/output_{i}_{j}.txt")
+                        
+
+                curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, output_name,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g)
 
                 curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
 
-                logger.info(f"Running the slac cmd: {curr_slac_cmd}")
-                #print(curr_slac_cmd)
-                #os.system(curr_slac_cmd)
+                logger.info(f"Running the slac cmd: \n {curr_slac_cmd}")
+                os.system(curr_slac_cmd)
                 
 
     elif args.simulate_single:

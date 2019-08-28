@@ -1,7 +1,10 @@
 import sys 
+import os
 
-sys.path.insert(0, "/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/mycode")
-sys.path.insert(0, "/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD")
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+root1 = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, root)
+sys.path.insert(0, root1)
 
 import preamble
 import weights

@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
 import os 
 
 
 survey_name = 'LSST'
-project_name = 'project'
+project_name = 'fproject'
 data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
+
+# bsub -W 02:00 -o foutput2_2.txt -r "python simulate.py --catalog-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/OneDegSq.fits --survey-name LSST --image-width 1800 --image-height 1800 --output-name section_2_2 --ra-center -0.25 --dec-center -0.25 --calculate-bias --cosmic-shear-g1 0.0 --cosmic-shear-g2 0.0 --verbose --no-stamps --no-agn --no-hsm --equilibrate --filter-band i --memory-trace"
 
 ##step size to try: 
 #0.001
