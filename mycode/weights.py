@@ -113,31 +113,6 @@ def clipped_weighted_mean(ids, cat, p, param, component, iso_or_grp, which_shape
 ######################## misc. #####################
 
 
-def get_not_dropped_cat(cat): 
-    grps = np.sort(list(set(cat['grp_id']))) #ids of all the groups, sorted. 
-    
-    #create hash map from grp_id to index in catalogue 
-    hash_grpid = {} 
-    for i, row in enumerate(cat): 
-        grp_id = row['grp_id']
-        if hash_grpid.get(grp_id, None) is None: 
-            hash_grpid[grp_id] = [] 
-        hash_grpid[grp_id].append(i)
-    
-    grp_sizes = [cat[hash_grpid[grp_id][0]]['grp_size'] for grp_id in grps] #in order of grps. 
-    
-    grp_dropped = []  #in order of grps. 
-    for grp_id in grps: 
-        cnt = 0
-        for idx in hash_grpid[grp_id]:
-            if cat[idx]['snr_grpf'] == 0: 
-                cnt+=1
-        grp_dropped.append(cnt)
-        
-    grps_not_dropped = np.array(grps)[np.array(grp_dropped) == 0]
-    return get_slice(cat, 'grp_id', set(list(grps_not_dropped)))
-
-
 
 
 

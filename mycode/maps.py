@@ -232,6 +232,33 @@ def get_fish_matrices(fits_file, grp_ids, descwl, only_fish=False):
 ####### all filters ##########
 
 
+def get_not_dropped_cat(cat): 
+    
+    #create hash map from grp_id to index in catalogue 
+    hash_grpid = {} 
+    for i, row in enumerate(cat): 
+        grp_id = row['grp_id']
+        if hash_grpid.get(grp_id, None) is None: 
+            hash_grpid[grp_id] = [] 
+        hash_grpid[grp_id].append(i)
+    
+    grps = cat['grp_id']
+    
+    grp_dropped = []  #in order of grps. 
+    for grp_id in grps: 
+        cnt = 0
+        for idx in hash_grpid[grp_id]:
+            if cat[idx]['snr_grpf'] == 0: 
+                cnt+=1
+        grp_dropped.append(cnt)
+
+    return cat[ np.array(grp_dropped) == 0], grp_dropped
+        
+    # grps_not_dropped = np.array(grps)[np.array(grp_dropped) == 0]
+    # return get_slice(cat, 'grp_id', set(list(grps_not_dropped)))
+
+
+
 #some interesting subsets of the simulation
 iso_gal = lambda cat: cat[cat['purity'] > .98] #isolated galaxies
 grp_gal = lambda cat: cat[cat['purity'] <= .98] #galaxies in a group of 2 or more. 
@@ -265,6 +292,7 @@ notdetc_and_ambig = lambda cat: cat[(cat['ambig_blend'] == True) & (cat['match']
 best = detc_and_notambig
 
 low_cond = lambda cat: cat[cat['cond_num_grp'] < 1e14]
+not_dropped = lambda cat: cat[cat['snr_grpf'] > 0]
 
 #filter rare (bad) objs. Which will not be good for our purposes. 
 not_bad = lambda cat: cat[(cat['snr_grp'] != 0) & (cat['ds_grp']!= np.inf) ]

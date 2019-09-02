@@ -131,6 +131,11 @@ def main():
                         type=str,
                         help=('specify name of the final fits'))
 
+    parser.add_argument('--memory-trace', action='store_true', 
+                        help="Whether to trace memory of individual simulate commands.")
+
+    parser.add_argument('--testing', action='store_true')
+
 
 
     args = parser.parse_args()
@@ -203,6 +208,9 @@ def main():
 
         image_width,image_height = int(total_width/args.num_sections), int(total_height/args.num_sections) 
         cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --equilibrate --filter-band i --variations-g {}'
+        if args.memory_trace: 
+            cmd += ' --memory-trace'
+
         slac_cmd='bsub -M {} -W {} -o "{}/output_{}_{}.txt" -r "{}"'
 
         for i,x in enumerate(np.linspace(endpoint1,endpoint2, args.num_sections)):
@@ -215,7 +223,8 @@ def main():
                     if os.path.getsize(output_file) > 0: 
                         continue
                     else: 
-                        os.system(f"rm {inputs['project']}/output_{i}_{j}.txt")
+                        if os.path.exists(f"{inputs['project']}/output_{i}_{j}.txt"):
+                            subprocess.run(f"rm {inputs['project']}/output_{i}_{j}.txt", shell=True)
                         
 
                 curr_cmd = cmd.format(inputs['simulate_file'], inputs['one_sq_degree'],args.survey_name,image_width,image_height, output_name,x,y,args.cosmic_shear_g1,args.cosmic_shear_g2, args.variations_g)
@@ -223,7 +232,9 @@ def main():
                 curr_slac_cmd = slac_cmd.format(args.max_memory,args.bjob_time,inputs['project'],i,j,curr_cmd)
 
                 logger.info(f"Running the slac cmd: \n {curr_slac_cmd}")
-                os.system(curr_slac_cmd)
+
+                if not args.testing:
+                    subprocess.run(curr_slac_cmd, shell=True)
                 
 
     elif args.simulate_single:
@@ -235,7 +246,7 @@ def main():
         slac_cmd=f'bsub -M {args.max_memory} -W {args.bjob_time} -o {output_file} -r "{cmd}"'
         logger.info(f"Running the slac cmd: {slac_cmd}")
 
-        os.system(slac_cmd)
+        subprocess.run(slac_cmd, shell=True)
 
 
     ######################################################################################################################################################################################################################################
@@ -300,11 +311,11 @@ def main():
         logger.info(f"Will source extract galaxies from noise file {noisefile_name}")
 
         #run sextractor on noise image.
-        cmd = 'sex {} -c {} -CATALOG_NAME {} -PARAMETERS_NAME {} -FILTER_NAME {} -STARNNW_NAME {}'.format(noisefile_name,inputs['config_file'],outputfile_name,inputs['param_file'],inputs['filter_file'],inputs['starnnw_file'])
+        cmd = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/sextractor-2.25.0/src/sex {} -c {} -CATALOG_NAME {} -PARAMETERS_NAME {} -FILTER_NAME {} -STARNNW_NAME {}'.format(noisefile_name,inputs['config_file'],outputfile_name,inputs['param_file'],inputs['filter_file'],inputs['starnnw_file'])
 
         logger.info(f"With cmd: {cmd}")
 
-        os.system(cmd)
+        subprocess.run(cmd, shell=True)
 
         logger.success(f"Successfully source extracted {noisefile_name}!")
 
