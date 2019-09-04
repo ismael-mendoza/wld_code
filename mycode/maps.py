@@ -234,17 +234,17 @@ def get_fish_matrices(fits_file, grp_ids, descwl, only_fish=False):
 
 def get_not_dropped_cat(cat): 
     
+    grps = cat['grp_id']
+
     #create hash map from grp_id to index in catalogue 
     hash_grpid = {} 
-    for i, row in enumerate(cat): 
-        grp_id = row['grp_id']
+    for i, grp_id in enumerate(grps): 
         if hash_grpid.get(grp_id, None) is None: 
             hash_grpid[grp_id] = [] 
         hash_grpid[grp_id].append(i)
     
-    grps = cat['grp_id']
     
-    grp_dropped = []  #in order of grps. 
+    grp_dropped = []  
     for grp_id in grps: 
         cnt = 0
         for idx in hash_grpid[grp_id]:
@@ -252,7 +252,7 @@ def get_not_dropped_cat(cat):
                 cnt+=1
         grp_dropped.append(cnt)
 
-    return cat[ np.array(grp_dropped) == 0], grp_dropped
+    return cat[ np.array(grp_dropped) == 0]
         
     # grps_not_dropped = np.array(grps)[np.array(grp_dropped) == 0]
     # return get_slice(cat, 'grp_id', set(list(grps_not_dropped)))
