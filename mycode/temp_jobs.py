@@ -18,20 +18,19 @@ data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
 
 # for g in ['-.005','-.01','-.015','-.02','0.','.005','.01','.015','.02']: 
 #for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']:
-for g in ['0.015']:
-# for g in ['-0.02', '-0.015', '-0.01', '-0.005', '0.01', '0.015']: 
+# for g in ['0.005']:
+for g in ['-0.02', '-0.015', '-0.01', '-0.005', '0.005', '0.01', '0.015']: 
 # for g in ['-0.01', '-0.005']: 
 # for g in ['-0.015']: 
     project_final_name = f"{project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0"
-    cmd = f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_final_name} --survey-name {survey_name} --max-memory 4096MB \
-        --bjob-time 04:00'
-    print(cmd)
-    os.system(cmd)
-    # cmd = f'python mycode/all-process.py --add-noise-all --extract-all --combine --num-sections 10 --project {project_final_name} --noise-seed 0 --survey-name {survey_name}'
-    # output_file = os.path.join(data_dir, project_final_name, "output-final.txt")
-    # slac_cmd = f'bsub -W 00:50 -M 2000MB -o {output_file} -r "{cmd}"'
-    # print(slac_cmd)
-    # os.system(slac_cmd)
+    # cmd = f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_final_name} --survey-name {survey_name} --max-memory 4096MB --bjob-time 04:00'
+    # print(cmd)
+    # os.system(cmd)
+    cmd = f'python mycode/all-process.py --add-noise-all --extract-all --combine --num-sections 10 --project {project_final_name} --noise-seed 0 --survey-name {survey_name}'
+    output_file = os.path.join(data_dir, project_final_name, "output-final.txt")
+    slac_cmd = f'bsub -W 00:50 -M 2000MB -o {output_file} -r "{cmd}"'
+    print(slac_cmd)
+    os.system(slac_cmd)
 
 
 # for g in ['0.0', '0.02']:
