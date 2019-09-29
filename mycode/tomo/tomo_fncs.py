@@ -2,12 +2,12 @@
 import pickle
 import os 
 from mycode.preamble import *
-import mycode.errors as errors
+import mycode.weights as weights
 import numpy as np 
 
 
-#input: (selected) catalogues for different shears. 
-#output: a tomogrpahic binning of each catalogue using Pat's suggestion which is 5 bins between (0.2, 1.2)
+#input: (selected) catalogues for different shears. tomos = np.linspace(0.0, 1.2, 6)
+#output: a tomogrpahic binning of each catalogue using Pat's suggestion which is 6 bins between (0.0, 1.2)
 # for z and one overflow bin >1.2. The result is a list of lists of cats for each shear and tomography 
 def get_tomographic_cats(cats, tomos): 
     tomo_cats = [] 
@@ -29,13 +29,14 @@ def get_tomographic_cats(cats, tomos):
     return tomo_cats
     
 
-def get_tomo_errs(tomo_cats, N): 
+def get_tomo_errs(tomo_cats, fnc, N=1000, args=[]): 
     tomo_errs_iso = []
     tomo_errs_grp = [] 
     for i,cats in enumerate(tomo_cats): 
         #get boostrapped errors. 
-        errs_iso = errors.errs_param_boot(cats,'bias_g1', N, np.median) 
-        errs_grp = errors.errs_param_boot(cats,'bias_g1_grp', N, np.median) 
+        orig_ids = list(range(len(cats[0])))
+        errs_iso = weights.get_errors(orig_ids, cats, fnc, N=N,  args=['1', 'iso']+args) 
+        errs_grp = weights.get_errors(orig_ids, cats, fnc, N=N, args=['1', 'grp']+args) 
         tomo_errs_iso.append(errs_iso)
         tomo_errs_grp.append(errs_grp)
 
