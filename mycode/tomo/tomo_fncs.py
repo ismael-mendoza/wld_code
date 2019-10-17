@@ -3,10 +3,11 @@ import pickle
 import os 
 from mycode.preamble import *
 import mycode.weights as weights
+import mycode.maps as maps
 import numpy as np 
 
 
-#input: (selected) catalogues for different shears. tomos = np.linspace(0.0, 1.2, 6)
+#input: (selected) catalogues for different shears. usually: tomos = np.linspace(0.0, 1.2, 7)
 #output: a tomogrpahic binning of each catalogue using Pat's suggestion which is 6 bins between (0.0, 1.2)
 # for z and one overflow bin >1.2. The result is a list of lists of cats for each shear and tomography 
 def get_tomographic_cats(cats, tomos): 
@@ -17,13 +18,13 @@ def get_tomographic_cats(cats, tomos):
         for cat in cats: 
             z_1 = tomos[i]
             z_2 = tomos[i+1]
-            bin_cat = down_cut(up_cut(cat,'z', z_1), 'z',z_2)
+            bin_cat = maps.down_cut(maps.up_cut(cat,'z', z_1), 'z',z_2)
             tomo_cats[i].append(bin_cat)
     
     #put in the last bin with everything that has z > 1.2 
     tomo_cats.append([])
     for cat in cats: 
-        bin_cat = up_cut(cat, 'z',tomos[-1])
+        bin_cat = maps.up_cut(cat, 'z',tomos[-1])
         tomo_cats[-1].append(bin_cat)
 
     return tomo_cats
@@ -94,22 +95,3 @@ def load_tomos(project_dir, extra_str =''):
     tomo_ms = pickle.load(open(os.path.join(project_dir, f"tomo_ms{extra_str}.p"),'rb'), encoding='latin1')
 
     return tomo_errs, tomo_bootstrap_matrices, tomo_ms
-
-
-
-
-
-# tomo_ms_errs = pickle.load(open(os.path.join(tomo_dir, f"tomo_ms_errs{extra_str}.p"),'rb'), encoding='latin1')
-
-# pickle.dump((tomo_errs_grp, tomo_errs_iso) , )
-
-# pickle.dump(tomo_bootstrap_matrices, os.path.join(tomo_dir,))
-# pickle.dump(tomo_ms, os.path.join(tomo_dir,))
-# pickle.dump(tomo_ms_errs, os.path.join(tomo_dir,f"tomo_ms_errs{extra_str}.p"))
-
-# """
-# Save tomographic cats so that they can be fed in the bias_matrix thingy. 
-# """
-# def save_tomo_cats(tomo_cats, tomo_dir): 
-#     for i,tomo_cat in enumerate(tomo_cats):
-#         pickle.dump(tomo_cat, os.path.join(tomo_dir, f"tomo_cat{i}.p"))

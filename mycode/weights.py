@@ -1,10 +1,8 @@
 import numpy as np
 
-
-
-####################################################################################################################
-####################################################################################################################
-
+################################################################################################################
+################################################################################################################
+################################################################################################################
 
 ################## utility ############################
 def cut_both(dbt, cut1, cut2): 
@@ -28,6 +26,11 @@ def boots_fnc(orig_ids, cats, fnc, N=1000, args=[]):
     results = [[fnc(ids, cat, *args) for ids in bootstrap_ids] for cat in cats]  
     return results 
 
+#all catalogues must be same size (so ids make sense) and sorted. 
+def get_errors(orig_ids, cats, fnc, N=1000, args=[]): 
+    results = boots_fnc(orig_ids, cats, fnc, N, args)
+    return [np.std(cat_results) for cat_results in results]
+
 
 ######################## medians #####################
 def median_fnc(ids, cat, component, iso_or_grp): 
@@ -36,18 +39,24 @@ def median_fnc(ids, cat, component, iso_or_grp):
 
 
 ############################ weighted means. ############################
-    
+
+def get_shape_noise(cat, component, which_shape_noise='component'):
+    if which_shape_noise=='component': 
+        shape_noise = np.std(cat[f'e{component}'])**2
+    elif which_shape_noise=='magnitude': 
+        shape_noise = np.std(np.sqrt(cat['e1']**2 + cat['e2']**2))**2
+    else: 
+        raise ValueError("Non-valid argument entered.")
+
+    return shape_noise
 
 def get_weights(ids, cat, component, iso_or_grp, which_shape_noise='component', shape_noise=None): 
-    suffix = get_iso_or_grp_suffix(iso_or_grp)
-    
-    if shape_noise is None: 
-        if which_shape_noise=='component': 
-            shape_noise = np.std(cat[f'e{component}'][ids])**2
-        elif which_shape_noise=='magnitude': 
-            shape_noise = np.std(np.sqrt(cat['e1'][ids]**2 + cat['e2'][ids]**2))**2
-        
-        
+    suffix = get_iso_or_grp_suffix(iso_or_grp)  
+
+    if not shape_noise: 
+        #no id dependence so always original catalogue.
+        shape_noise = get_shape_noise(cat, component, which_shape_noise) 
+
     weights = (shape_noise + cat[f'dg{component}{suffix}'][ids]**2)**(-1)
     
     return weights 
@@ -59,16 +68,10 @@ def wmean(ids, cat, component, iso_or_grp, which_shape_noise, shape_noise=None):
     assert which_shape_noise in ['component', 'magnitude'], 'invalid agument for which_shape_noise'
     
     suffix = get_iso_or_grp_suffix(iso_or_grp)
-    weights = get_weights(ids, cat, component, iso_or_grp, which_shape_noise, shape_noise)
+    weights = get_weights(ids, cat, component, iso_or_grp, which_shape_noise, shape_noise=shape_noise)
     param = f'bias_g{component}{suffix}'
     dbt = cat[param][ids]
     return np.sum(weights*dbt)/np.sum(weights)
-
-
-#all catalogues must be same size (so ids make sense) and sorted. 
-def get_errors(orig_ids, cats, fnc, N=1000, args=[]): 
-    results = boots_fnc(orig_ids, cats, fnc, N, args)
-    return [np.std(cat_results) for cat_results in results]
 
 
 
@@ -110,14 +113,3 @@ def clipped_weighted_mean(ids, cat, p, param, component, iso_or_grp, which_shape
     return wmean(fids, final, component, iso_or_grp, which_shape_noise, shape_noise)
 
 
-######################## misc. #####################
-
-
-
-
-
-# def boots_fnc_simple(dbt, fnc, N=1000):
-#     results = [] 
-#     for i in range(N): 
-#         results.append(fnc(np.random.choice(dbt,len(dbt), replace=True)))
-#     return results 
