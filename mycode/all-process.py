@@ -207,7 +207,8 @@ def main():
         assert total_width % args.num_sections == 0 and total_height % args.num_sections == 0
 
         image_width,image_height = int(total_width/args.num_sections), int(total_height/args.num_sections) 
-        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --equilibrate --filter-band i --variations-g {}'
+        cmd='python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {}'
+        # --equilibrate 
         if args.memory_trace: 
             cmd += ' --memory-trace'
 

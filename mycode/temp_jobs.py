@@ -3,7 +3,7 @@ import os
 
 
 survey_name = 'LSST'
-project_name = 'fproject'
+project_name = 'no_equilibration1_'
 data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
 
 # bsub -W 02:00 -o foutput2_2.txt -r "python simulate.py --catalog-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/OneDegSq.fits --survey-name LSST --image-width 1800 --image-height 1800 --output-name section_2_2 --ra-center -0.25 --dec-center -0.25 --calculate-bias --cosmic-shear-g1 0.0 --cosmic-shear-g2 0.0 --verbose --no-stamps --no-agn --no-hsm --equilibrate --filter-band i --memory-trace"
@@ -19,9 +19,10 @@ data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
 # for g in ['-.005','-.01','-.015','-.02','0.','.005','.01','.015','.02']: 
 #for g in ['-0.1','-0.05','-.02','-.015', '-.01', '-.005','.005','.01','.015', '0.02', '0.05', '0.1']:
 # for g in ['0.005']:
-for g in ['-0.02', '-0.015', '-0.01', '-0.005', '0.005', '0.01', '0.015']: 
+# for g in ['-0.1','-0.05', '0.05', '0.1']:
+# for g in ['-0.02', '-0.015', '-0.01', '-0.005', '0.005', '0.01', '0.015']: 
 # for g in ['-0.01', '-0.005']: 
-# for g in ['-0.015']: 
+for g in ['0.0']: 
     project_final_name = f"{project_name}{survey_name}-g1_{int(float(g)*1000)}-g2_0"
     # cmd = f'python mycode/all-process.py --simulate-all --num-sections 10 --cosmic-shear-g1 {g} --cosmic-shear-g2 0 --project {project_final_name} --survey-name {survey_name} --max-memory 4096MB --bjob-time 04:00'
     # print(cmd)
