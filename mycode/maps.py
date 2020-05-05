@@ -19,54 +19,6 @@ from collections import defaultdict
 dflt_sorting = ['db_id']
 
 
-#directories that we will be using 
-locations = dict(
-aegis = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael',
-wld = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD',
-data = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data',
-mycode = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/mycode', 
-)
-
-
-
-#### Prepare input 
-files = dict(
-# final_fitsLSST1 = os.path.join(locations['data'], 'projectLSST-g1_-100-g2_0/final_fits.fits'), 
-# final_fitsLSST2 = os.path.join(locations['data'], 'projectLSST-g1_-50-g2_0/final_fits.fits'), 
-final_fitsLSSTn20 = os.path.join(locations['data'], 'projectLSST-g1_-20-g2_0/final_fits.fits'), 
-final_fitsLSSTn15 = os.path.join(locations['data'], 'projectLSST-g1_-15-g2_0/final_fits.fits'), 
-final_fitsLSSTn10 = os.path.join(locations['data'], 'projectLSST-g1_-10-g2_0/final_fits.fits'), 
-final_fitsLSSTn05 = os.path.join(locations['data'], 'projectLSST-g1_-5-g2_0/final_fits.fits'), 
-final_fitsLSST00 = os.path.join(locations['data'], 'projectLSST-g1_0-g2_0/final_fits.fits'), 
-final_fitsLSST05 = os.path.join(locations['data'], 'projectLSST-g1_5-g2_0/final_fits.fits'), 
-final_fitsLSST10 = os.path.join(locations['data'], 'projectLSST-g1_10-g2_0/final_fits.fits'), 
-final_fitsLSST15 = os.path.join(locations['data'], 'projectLSST-g1_15-g2_0/final_fits.fits'), 
-final_fitsLSST20 = os.path.join(locations['data'], 'projectLSST-g1_20-g2_0/final_fits.fits'), 
-# final_fitsLSST12 = os.path.join(locations['data'], 'projectLSST-g1_50-g2_0/final_fits.fits'), 
-# final_fitsLSST13 = os.path.join(locations['data'], 'projectLSST-g1_100-g2_0/final_fits.fits'), 
-    
-
-final_fitsLSST1n20_ss1 = os.path.join(locations['data'],'projectLSST-g1_-20-g2_0_ss1/final_fits.fits'),
-final_fitsLSST2_ss1 = os.path.join(locations['data'],'projectLSST-g1_-15-g2_0_ss1/final_fits.fits'),
-final_fitsLSST3_ss1 = os.path.join(locations['data'],'projectLSST-g1_-10-g2_0_ss1/final_fits.fits'),
-final_fitsLSST4_ss1 = os.path.join(locations['data'],'projectLSST-g1_-5-g2_0_ss1/final_fits.fits'),
-final_fitsLSST5_ss1 = os.path.join(locations['data'],'projectLSST-g1_0-g2_0_ss1/final_fits.fits'),
-final_fitsLSST6_ss1 = os.path.join(locations['data'],'projectLSST-g1_5-g2_0_ss1/final_fits.fits'),
-final_fitsLSST7_ss1 = os.path.join(locations['data'],'projectLSST-g1_10-g2_0_ss1/final_fits.fits'),
-final_fitsLSST8_ss1 = os.path.join(locations['data'],'projectLSST-g1_15-g2_0_ss1/final_fits.fits'),
-final_fitsLSST9_ss1 = os.path.join(locations['data'],'projectLSST-g1_20-g2_0_ss1/final_fits.fits'),
-)
-
-
-# def mad(arr):
-#     """ Median Absolute Deviation: a "Robust" version of standard deviation.
-#         Indices variabililty of the sample.
-#         https://en.wikipedia.org/wiki/Median_absolute_deviation 
-#     """
-#     arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
-#     med = np.median(arr)
-#     return np.median(np.abs(arr - med))
-
 
 def retrieve_cats(basename, which=[], only_zero_shear = False): 
     dcats = {}
