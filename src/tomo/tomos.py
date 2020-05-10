@@ -1,9 +1,7 @@
 #should be ran from inside WLD folder. 
-import os 
-import pickle
-import subprocess 
+import subprocess
 import argparse
-from mycode.tomo.tomo_fncs import * 
+from src.tomo.tomo_fncs import *
 from mycode.errors import * 
 
 wld_dir = "/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WeakLensingDeblending"

@@ -2,9 +2,8 @@
 import pickle
 import os 
 from mycode.preamble import *
-import mycode.weights as weights
-import mycode.maps as maps
-import numpy as np 
+import src.weights as weights
+import src.maps as maps
 
 
 #input: (selected) catalogues for different shears. usually: tomos = np.linspace(0.0, 1.2, 7)
@@ -18,13 +17,13 @@ def get_tomographic_cats(cats, tomos):
         for cat in cats: 
             z_1 = tomos[i]
             z_2 = tomos[i+1]
-            bin_cat = maps.down_cut(maps.up_cut(cat,'z', z_1), 'z',z_2)
+            bin_cat = maps.down_cut(maps.up_cut(cat, 'z', z_1), 'z', z_2)
             tomo_cats[i].append(bin_cat)
     
     #put in the last bin with everything that has z > 1.2 
     tomo_cats.append([])
     for cat in cats: 
-        bin_cat = maps.up_cut(cat, 'z',tomos[-1])
+        bin_cat = maps.up_cut(cat, 'z', tomos[-1])
         tomo_cats[-1].append(bin_cat)
 
     return tomo_cats
@@ -36,8 +35,8 @@ def get_tomo_errs(tomo_cats, fnc, N=1000, args=[]):
     for i,cats in enumerate(tomo_cats): 
         #get boostrapped errors. 
         orig_ids = list(range(len(cats[0])))
-        errs_iso = weights.get_errors(orig_ids, cats, fnc, N=N,  args=['1', 'iso']+args) 
-        errs_grp = weights.get_errors(orig_ids, cats, fnc, N=N, args=['1', 'grp']+args) 
+        errs_iso = weights.get_errors(orig_ids, cats, fnc, N=N, args=['1', 'iso'] + args)
+        errs_grp = weights.get_errors(orig_ids, cats, fnc, N=N, args=['1', 'grp'] + args)
         tomo_errs_iso.append(errs_iso)
         tomo_errs_grp.append(errs_grp)
 

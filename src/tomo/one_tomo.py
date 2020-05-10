@@ -1,7 +1,7 @@
 #this should be ran from inside the WLD folder. 
 import argparse 
 import numpy as np 
-from mycode.tomo.tomo_fncs import * 
+from src.tomo.tomo_fncs import *
 from mycode.errors import bootstrap_cats
 
 
