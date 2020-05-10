@@ -1,5 +1,5 @@
 *.p 
 *.fits 
 *.png
-WeakLensingDeblending*
+jupyter/old*
 *.ipynb_checkpoints
