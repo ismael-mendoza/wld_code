@@ -17,13 +17,6 @@ import numpy as np
 from loguru import logger
 
 
-# names to be used.
-root_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-data_dir = root_dir.joinpath('data')
-logs_dir = root_dir.joinpath('logs')
-params_dir = data_dir.joinpath('params')
-
-
 @logger.catch
 def main():
     # some constants used throughout
@@ -349,20 +342,20 @@ if __name__ == '__main__':
                         help='Simulates the requested regions with given job_number using multiple batch jobs.')
 
     parser.add_argument('--add-noise-all', action='store_true',
-                        help=('Add noise to all of the images (one for each section) of the project.'))
+                        help='Add noise to all of the images (one for each section) of the project.')
 
     parser.add_argument('--extract-all', action='store_true',
-                        help=('Classifies into detected and ambiously blended for a one square degree.'))
+                        help='Classifies into detected and ambiguously blended for a one square degree.')
 
     parser.add_argument('--combine', action='store_true',
-                        help=('Combines regions with given job_number'))
+                        help='Combines regions with given job_number')
 
     # commands that run a single simulation, used for testing.
     parser.add_argument('--simulate-single', action='store_true',
-                        help=('Simulate a single chip with width,height specified with single-image-height,etc.'))
+                        help='Simulate a single chip with width,height specified with single-image-height,etc.')
 
     parser.add_argument('--extract-single', action='store_true',
-                        help=('Classifies into detected and ambiously blended for a single section.'))
+                        help='Classifies into detected and ambiously blended for a single section.')
 
     parser.add_argument('--add-noise-single', action='store_true',
                         help=(
