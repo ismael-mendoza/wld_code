@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+This file is designed to run the fisher bias analysis on a one square degree simulation of WeakLensingDeblending.
+It works by separating the one square degree into patches and doing the analysis in parallel.
+For now it only works on the SLAC cluster.
+"""
 
 import argparse
 import subprocess
