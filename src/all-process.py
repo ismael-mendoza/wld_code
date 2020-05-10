@@ -1,155 +1,26 @@
 #!/usr/bin/env python
 
 import argparse
-import os
 import subprocess
+import os
+from pathlib import Path
 
+import astropy
 import astropy.io.fits as fits
-import astropy.table as astroTable
 import fitsio
 import numpy as np
 from loguru import logger
 
-from WeakLensingDeblending import descwl
+
+# names to be used.
+root_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+data_dir = root_dir.joinpath('data')
+logs_dir = root_dir.joinpath('logs')
+params_dir = data_dir.joinpath('params')
 
 
 @logger.catch
 def main():
-    # names to be used.
-    WLD_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD'
-    data_dir = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data'
-    logs_dir = f'{WLD_dir}/logs'
-    params_dir = f"{WLD_dir}/params"
-
-    # setup logger.
-    logger.add(f"{logs_dir}/all-process.log", format="{time}-{level}: {message}", level="INFO", backtrace=True,
-               rotation="7:00", enqueue=True)  # new file created every day at 7:00 am .
-
-    # setup argparser.
-    parser = argparse.ArgumentParser(description='Simulate different regions from a square degree and analyze their '
-                                                 'combination in SExtractor.',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    # required arugments.
-    parser.add_argument('--project', required=True,
-                        type=str,
-                        help='Project name, directory name for all your files.')
-
-    parser.add_argument('--num-sections', required=True,
-                        type=int,
-                        help='Number of squares along one dimension to divide the one square degree.')
-
-    # main commands that run multiple simulations and combine them.
-    parser.add_argument('--simulate-all', action='store_true',
-                        help='Simulates the requested regions with given job_number using multiple batch jobs.')
-
-    parser.add_argument('--add-noise-all', action='store_true',
-                        help=('Add noise to all of the images (one for each section) of the project.'))
-
-    parser.add_argument('--extract-all', action='store_true',
-                        help=('Classifies into detected and ambiously blended for a one square degree.'))
-
-    parser.add_argument('--combine', action='store_true',
-                        help=('Combines regions with given job_number'))
-
-    # commands that run a single simulation, used for testing.
-    parser.add_argument('--simulate-single', action='store_true',
-                        help=('Simulate a single chip with width,height specified with single-image-height,etc.'))
-
-    parser.add_argument('--extract-single', action='store_true',
-                        help=('Classifies into detected and ambiously blended for a single section.'))
-
-    parser.add_argument('--add-noise-single', action='store_true',
-                        help=(
-                            'Create a noise image for an image .fits file in current project. Have to pass in the name of the image to add noise to.'))
-
-    parser.add_argument('--single-image-width', default=None,
-                        type=int,
-                        help=('Width of single image to be simulated (in pixels).'))
-
-    parser.add_argument('--single-image-height', default=None,
-                        type=int,
-                        help=('Height of single image to be simulated (in pixels).'))
-
-    parser.add_argument('--single-image-ra-center', default=0.0,
-                        type=float,
-                        help=('Ra center of the single image to be simulated'))
-
-    parser.add_argument('--single-image-dec-center', default=0.0,
-                        type=float,
-                        help=('Dec center of the single image to be simulated'))
-
-    parser.add_argument('--section-name', default='section',
-                        type=str,
-                        help=('specify name of the section image when it is a single one.'))
-
-    # arguments for specifying simulation.
-    parser.add_argument('--cosmic-shear-g1', default=None,
-                        type=float,
-                        help=('cosmic shear g1'))
-
-    parser.add_argument('--cosmic-shear-g2', default=None,
-                        type=float,
-                        help=('cosmic shear g2'))
-
-    # parser.add_argument('--variations-x', default=None, 
-    #                     type=float,
-    #                     help=('Step size for centroid to use in simulation.'))
-
-    parser.add_argument('--variations-g', default=0.03,
-                        type=float,
-                        help='Step size for shear to use in simulation.')
-
-    parser.add_argument('--noise-seed', default=None,
-                        type=int,
-                        help=('noise seed to use when adding noise to image SExtracted.'))
-
-    parser.add_argument('--survey-name', required=True,
-                        type=str, choices=['LSST', 'HSC', 'DES'],
-                        help=('Select survey to use.'))
-
-    # additional names and arguments for running remotely.
-    parser.add_argument('--bjob-time', default='02:00',
-                        type=str,
-                        help=('Time of jobs to be run in SLAC'))
-
-    parser.add_argument('--max-memory', default='4096MB',
-                        type=str,
-                        help=('Max memory to be used when running a slac process.'))
-
-    parser.add_argument('--noise-name', default='noise_image',
-                        type=str,
-                        help=('specify name of the noise iamge'))
-
-    parser.add_argument('--outcat-name', default='outcat',
-                        type=str,
-                        help=('specify name of the output catalogue from sextracting.'))
-
-    parser.add_argument('--final-name', default='final_fits',
-                        type=str,
-                        help=('specify name of the final fits'))
-
-    parser.add_argument('--memory-trace', action='store_true',
-                        help="Whether to trace memory of individual simulate commands.")
-
-    parser.add_argument('--testing', action='store_true')
-
-    args = parser.parse_args()
-
-    # make sure only arguments that make sense are selected.
-    if (args.simulate_all or args.simulate_single) and (args.cosmic_shear_g1 == None or args.cosmic_shear_g2 == None):
-        raise RuntimeError('Need to include the cosmic shear when simulating.')
-
-    if (args.simulate_all or args.combine or args.add_noise_all or args.extract_all) and not args.num_sections:
-        raise RuntimeError('Need to include number of sections when dealing with whole one square degree.')
-
-    if (args.add_noise_single or args.add_noise_all) and args.noise_seed == None:
-        raise RuntimeError('To add noise you need the noise seed!')
-
-    if args.simulate_single and (args.single_image_height == None or args.single_image_width == None):
-        raise RuntimeError('Need size of the image when processing a single section, default is 4096.')
-
-    ###################################################################
     # some constants used throughout
 
     if args.survey_name == 'LSST':
@@ -187,9 +58,7 @@ def main():
 
     os.chdir(inputs['WLD'])  # convenience so we can run simulate...
 
-    ######################################################################################################################################################################################################################################
     # simulate the regions.
-
     if args.simulate_all:
         # constants used for the endpoints.
         endpoint2 = (1. - 1. / args.num_sections) / 2  # in degrees.
@@ -200,8 +69,11 @@ def main():
         assert total_width % args.num_sections == 0 and total_height % args.num_sections == 0
 
         image_width, image_height = int(total_width / args.num_sections), int(total_height / args.num_sections)
-        cmd = 'python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} --output-name {} --ra-center {} --dec-center {} --calculate-bias --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g {}'
-        # --equilibrate 
+        cmd = 'python {} --catalog-name {} --survey-name {} --image-width {} --image-height {} ' \
+              '--output-name {} --ra-center {} --dec-center {} --calculate-bias' \
+              ' --cosmic-shear-g1 {} --cosmic-shear-g2 {} --verbose --no-stamps ' \
+              '--no-agn --no-hsm --filter-band i --variations-g {} --equilibrate'
+
         if args.memory_trace:
             cmd += ' --memory-trace'
 
@@ -291,10 +163,11 @@ def main():
                     np.sqrt((detected['X_IMAGE'] - gal_row['dx']) ** 2 + (detected['Y_IMAGE'] - gal_row['dy']) ** 2) / (
                             detected['SIGMA'] + gal_row['psf_sigm']))
 
-                # mark all objects with effective distance <1 as ambiguosly blended.
+                # mark all objects with effective distance <1 as ambiguously blended.
                 marked_indices = [matched_indices[i] for i, distance in enumerate(effective_distances) if distance < 1.]
 
-                # if at least one index was marked as ambiguous, add both the primarily match object and the true non-primary object as ambiguous.
+                # if at least one index was marked as ambiguous, add both the primarily match object
+                # and the true non-primary object as ambiguous.
                 if len(marked_indices) > 0:
                     ambiguous_blends_indices.append(index)
                     ambiguous_blends_indices.extend(marked_indices)
@@ -366,7 +239,7 @@ def main():
             sigma = np.linalg.det(second_moments) ** (+1. / 4)  # should be a PLUS.
             sigmas.append(sigma)
 
-        SIGMA = astroTable.Column(name='SIGMA', data=sigmas)
+        SIGMA = astropy.table.Column(name='SIGMA', data=sigmas)
         detected.add_column(SIGMA)
 
         # find the indices of the ambiguous blends.
@@ -378,13 +251,13 @@ def main():
 
         logger.info(f"Adding column to original table and writing it to {finalfits_name}")
 
-        ambigous_blend_column = []
+        ambiguous_blend_column = []
         for i, gal_row in enumerate(table):
             if i in ambg_blends:
-                ambigous_blend_column.append(True)
+                ambiguous_blend_column.append(True)
             else:
-                ambigous_blend_column.append(False)
-        column = astroTable.Column(name='ambig_blend', data=ambigous_blend_column)
+                ambiguous_blend_column.append(False)
+        column = astropy.table.Column(name='ambig_blend', data=ambiguous_blend_column)
         table.add_column(column)
 
         logger.debug(f"Number of galaxies in table from file {finalfits_name} is: {len(table)}")
@@ -431,11 +304,11 @@ def main():
 
                 logger.info(f"Reading one of final fits before combining with name {finalfits_name}")
 
-                table = astroTable.Table.read(finalfits_name)
+                table = astropy.table.Table.read(finalfits_name)
                 tables.append(table)
 
         # combine tables list into final Table
-        logger.info("Vertically stakcing the tables from each of the final fits files into one big table...")
+        logger.info("Vertically stacking the tables from each of the final fits files into one big table...")
 
         from astropy.table import vstack
         Table = vstack(tables)
@@ -447,4 +320,130 @@ def main():
 
 
 if __name__ == '__main__':
+
+    # setup logger.
+    logger.add(f"{logs_dir}/all-process.log", format="{time}-{level}: {message}", level="INFO", backtrace=True,
+               rotation="7:00", enqueue=True)  # new file created every day at 7:00 am .
+
+    # setup argparser.
+    parser = argparse.ArgumentParser(description='Simulate different regions from a square degree and analyze their '
+                                                 'combination in SExtractor.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    # required arguments.
+    parser.add_argument('--project', required=True,
+                        type=str,
+                        help='Project name, directory name for all your files.')
+
+    parser.add_argument('--num-sections', required=True,
+                        type=int,
+                        help='Number of squares along one dimension to divide the one square degree.')
+
+    # main commands that run multiple simulations and combine them.
+    parser.add_argument('--simulate-all', action='store_true',
+                        help='Simulates the requested regions with given job_number using multiple batch jobs.')
+
+    parser.add_argument('--add-noise-all', action='store_true',
+                        help=('Add noise to all of the images (one for each section) of the project.'))
+
+    parser.add_argument('--extract-all', action='store_true',
+                        help=('Classifies into detected and ambiously blended for a one square degree.'))
+
+    parser.add_argument('--combine', action='store_true',
+                        help=('Combines regions with given job_number'))
+
+    # commands that run a single simulation, used for testing.
+    parser.add_argument('--simulate-single', action='store_true',
+                        help=('Simulate a single chip with width,height specified with single-image-height,etc.'))
+
+    parser.add_argument('--extract-single', action='store_true',
+                        help=('Classifies into detected and ambiously blended for a single section.'))
+
+    parser.add_argument('--add-noise-single', action='store_true',
+                        help=(
+                            'Create a noise image for an image .fits file in current project. Have to pass in the '
+                            'name of the image to add noise to.'))
+
+    parser.add_argument('--single-image-width', default=None,
+                        type=int,
+                        help='Width of single image to be simulated (in pixels).')
+
+    parser.add_argument('--single-image-height', default=None,
+                        type=int,
+                        help='Height of single image to be simulated (in pixels).')
+
+    parser.add_argument('--single-image-ra-center', default=0.0,
+                        type=float,
+                        help='Ra center of the single image to be simulated')
+
+    parser.add_argument('--single-image-dec-center', default=0.0,
+                        type=float,
+                        help='Dec center of the single image to be simulated')
+
+    parser.add_argument('--section-name', default='section',
+                        type=str,
+                        help='specify name of the section image when it is a single one.')
+
+    # arguments for specifying simulation.
+    parser.add_argument('--cosmic-shear-g1', default=None,
+                        type=float,
+                        help='cosmic shear g1')
+
+    parser.add_argument('--cosmic-shear-g2', default=None,
+                        type=float,
+                        help='cosmic shear g2')
+
+    parser.add_argument('--variations-g', default=0.03,
+                        type=float,
+                        help='Step size for shear to use in simulation.')
+
+    parser.add_argument('--noise-seed', default=None,
+                        type=int,
+                        help='noise seed to use when adding noise to image SExtracted.')
+
+    parser.add_argument('--survey-name', required=True,
+                        type=str, choices=['LSST', 'HSC', 'DES'],
+                        help='Select survey to use.')
+
+    # additional names and arguments for running remotely.
+    parser.add_argument('--bjob-time', default='02:00',
+                        type=str,
+                        help='Time of jobs to be run in SLAC')
+
+    parser.add_argument('--max-memory', default='4096MB',
+                        type=str,
+                        help='Max memory to be used when running a slac process.')
+
+    parser.add_argument('--noise-name', default='noise_image',
+                        type=str,
+                        help='specify name of the noise iamge')
+
+    parser.add_argument('--outcat-name', default='outcat',
+                        type=str,
+                        help='specify name of the output catalogue from sextracting.')
+
+    parser.add_argument('--final-name', default='final_fits',
+                        type=str,
+                        help='specify name of the final fits')
+
+    parser.add_argument('--memory-trace', action='store_true',
+                        help="Whether to trace memory of individual simulate commands.")
+
+    parser.add_argument('--testing', action='store_true')
+
+    args = parser.parse_args()
+
+    # make sure only arguments that make sense are selected.
+    if (args.simulate_all or args.simulate_single) and (args.cosmic_shear_g1 is None or args.cosmic_shear_g2 is None):
+        raise RuntimeError('Need to include the cosmic shear when simulating.')
+
+    if (args.simulate_all or args.combine or args.add_noise_all or args.extract_all) and not args.num_sections:
+        raise RuntimeError('Need to include number of sections when dealing with whole one square degree.')
+
+    if (args.add_noise_single or args.add_noise_all) and args.noise_seed is None:
+        raise RuntimeError('To add noise you need the noise seed!')
+
+    if args.simulate_single and (args.single_image_height is None or args.single_image_width is None):
+        raise RuntimeError('Need size of the image when processing a single section, default is 4096.')
+
     main()
