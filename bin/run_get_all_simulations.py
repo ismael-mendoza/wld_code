@@ -8,10 +8,11 @@ survey_name = 'LSST'
 
 
 def main(args):
-    if args.small:
-        gs = ['-.02', '-.015', '-.01', '-.005', '.005', '.01', '.015', '0.02']
-    else:
+    if args.large:
         gs = ['-0.1', '-0.05', '-.02', '-.015', '-.01', '-.005', '.005', '.01', '.015', '0.02', '0.05', '0.1']
+
+    else:
+        gs = ['-.02', '-.015', '-.01', '-.005', '.005', '.01', '.015', '0.02']
 
     for g in gs:
         project_final_name = f"{args.project}{survey_name}-g1_{int(float(g) * 1000)}-g2_0"
@@ -37,7 +38,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simulate different regions from a square degree and analyze their '
                                                  'combination in SExtractor.')
-    parser.add_argument('--small', action='store_true')
+    parser.add_argument('--large', action='store_true')
     parser.add_argument('--simulate', action='store_true')
     parser.add_argument('--process', action='store_true')
     parser.add_argument('--project', type=str, default='project')

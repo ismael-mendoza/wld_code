@@ -8,13 +8,14 @@ For now it only works on the SLAC cluster.
 import argparse
 import subprocess
 import os
-from pathlib import Path
 
 import astropy
 import astropy.io.fits as fits
 import fitsio
 import numpy as np
 from loguru import logger
+
+from src import utils
 
 
 @logger.catch
@@ -27,27 +28,29 @@ def main():
         pixel_scale = 0.17
     elif args.survey_name == 'DES':
         pixel_scale = .263
+    else:
+        raise ValueError
 
     logger.info(f"\n Using survey {args.survey_name} and pixel scale {pixel_scale}")
     SECTION_NAME = 'section'
 
     ###################################################################
 
-    logger.info(f"Remember by default we assume we are running in SLAC cluster with WLD directory being: {WLD_dir}")
+    logger.info(f"Remember by default we assume we are running in SLAC cluster.")
 
     inputs = dict(
-        project=f'{data_dir}/{args.project}',
-        noise_image=f'{data_dir}/{args.project}/{args.noise_name}.fits',
-        final_fits=f'{data_dir}/{args.project}/{args.final_name}.fits',
-        single_section=f'{data_dir}/{args.project}/{args.section_name}.fits',
-        output_detected=f'{data_dir}/{args.project}/{args.outcat_name}.cat',
-        config_file=f'{params_dir}/sextractor_runs/default.sex',
-        param_file=f'{params_dir}/sextractor_runs/default.param',
-        filter_file=f'{params_dir}/sextractor_runs/default.conv',
-        starnnw_file=f'{params_dir}/sextractor_runs/default.nnw',
-        WLD=WLD_dir,
-        simulate_file=f'{WLD_dir}/WeakLensingDeblending/simulate.py',
-        one_sq_degree=f'{params_dir}/OneDegSq.fits',
+        project=f'{utils.data_dir}/{args.project}',
+        noise_image=f'{utils.data_dir}/{args.project}/{args.noise_name}.fits',
+        final_fits=f'{utils.data_dir}/{args.project}/{args.final_name}.fits',
+        single_section=f'{utils.data_dir}/{args.project}/{args.section_name}.fits',
+        output_detected=f'{utils.data_dir}/{args.project}/{args.outcat_name}.cat',
+        config_file=f'{utils.params_dir}/sextractor_runs/default.sex',
+        param_file=f'{utils.params_dir}/sextractor_runs/default.param',
+        filter_file=f'{utils.params_dir}/sextractor_runs/default.conv',
+        starnnw_file=f'{utils.params_dir}/sextractor_runs/default.nnw',
+        WLD=utils.root_dir,
+        simulate_file=f'WeakLensingDeblending/simulate.py',
+        one_sq_degree=f'{utils.params_dir}/OneDegSq.fits',
     )
 
     # create project directory if does not exist yet
@@ -113,7 +116,6 @@ def main():
 
         subprocess.run(slac_cmd, shell=True)
 
-    ######################################################################################################################################################################################################################################
     # add noise to the image before extraction.
     def add_noise(noisefile_name, file_name, noise_seed):
 
