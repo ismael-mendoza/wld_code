@@ -1,7 +1,6 @@
 import numpy as np
-import numpy as np
 import scipy.optimize as opt
-import weights
+from . import weights
 
 
 # input np.array covariance matrix.
