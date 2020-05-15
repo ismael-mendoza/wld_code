@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 This file is designed to run the fisher bias analysis on a one square degree simulation of WeakLensingDeblending.
 It works by separating the one square degree into patches and doing the analysis in parallel.
@@ -108,8 +108,8 @@ def extract(inputs, pixel_scale, filename, noisefile, outputfile, finalfits, num
     # run sextractor on noise image.
     cmd = '/nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/sextractor-2.25.0/src/sex {} -c {} -CATALOG_NAME {} ' \
           '-PARAMETERS_NAME {} -FILTER_NAME {} -STARNNW_NAME {}'.format(
-        noisefile, inputs['config_file'], outputfile, inputs['param_file'], inputs['filter_file'],
-        inputs['starnnw_file'])
+            noisefile, inputs['config_file'], outputfile, inputs['param_file'], inputs['filter_file'],
+            inputs['starnnw_file'])
 
     logger.info(f"With cmd: {cmd}")
 
@@ -286,7 +286,7 @@ def main(args):
         filter_file=f'{utils.params_dir}/sextractor_runs/default.conv',
         starnnw_file=f'{utils.params_dir}/sextractor_runs/default.nnw',
         WLD=utils.root_dir,
-        simulate_file=f'WeakLensingDeblending/simulate.py',
+        simulate_file=f'{utils.root_dir}/WeakLensingDeblending/simulate.py',
         one_sq_degree=f'{utils.params_dir}/OneDegSq.fits',
     )
 
