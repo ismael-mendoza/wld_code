@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import scipy.optimize as opt
 from . import weights
 
@@ -166,14 +167,14 @@ def prepare_money_plot(g1s, orig_ids, scats, fnc, fit_procedure=chi_sq_fit, N=10
     inv, inv_grp = np.linalg.inv(cov), np.linalg.inv(cov_grp)
 
     return (values, values_grp), (cov, cov_grp, inv, inv_grp, corr, corr_grp), (errs, errs_grp), (
-    boot_values, boot_values_grp)
+        boot_values, boot_values_grp)
 
 
 def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_procedure=chi_sq_fit, model=linear_f,
                     ticks1=None, labely1=None, ax=None, colors=None, extra=None,
                     legend_size=25, tick_size=40, label_size=40):
     """
-    * The errors are obtained as the squaroot of the diagonal of the covariance matrix. 
+    * The errors are obtained as the square root of the diagonal of the covariance matrix.
     * betas = [betas_iso, betas_grp] in that order. 
     * For simplicity this function only supports money plot for g1 component on bias. 
     """
@@ -238,7 +239,7 @@ def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_p
     ax.set_xlabel(r'$g_1$', size=label_size)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
-    if labely1 != None:
+    if labely1 is not None:
         ax.get_yaxis().get_offset_text().set_size(1)
         ax.set_ylabel('\\rm {}'.format(labely1), size=label_size)
     else:
@@ -248,7 +249,7 @@ def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_p
 
     ax.tick_params(axis='both', size=10, width=3, which='both')
 
-    if ticks1 != None:
+    if ticks1 is not None:
         ax.set_yticklabels(ticks1)
 
     ax.legend(loc='best', prop={'size': legend_size})

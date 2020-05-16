@@ -1,9 +1,8 @@
 # this should be ran from inside the WLD folder. 
 import pickle
 import os 
-from mycode.preamble import *
-import src.weights as weights
-import src.maps as maps
+from .. import weights
+from .. import maps
 
 
 #input: (selected) catalogues for different shears. usually: tomos = np.linspace(0.0, 1.2, 7)
