@@ -1,3 +1,6 @@
+*data/*
+*.p
+*.zip
 *.fits 
 *.png
 jupyter/old*
