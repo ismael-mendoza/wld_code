@@ -1,0 +1,43 @@
+Read 858502 catalog entries from /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/OneDegSq.fits
+Simulating LSST i-band survey with {'survey_name': 'LSST', 'filter_band': 'i', 'atmospheric_psf_beta': 0.0, 'atmospheric_psf_e1': 0.0, 'atmospheric_psf_e2': 0.0, 'cosmic_shear_g1': 0.0, 'cosmic_shear_g2': 0.0, 'airmass': 1.2, 'mirror_diameter': 8.36, 'effective_area': 32.4, 'image_width': 1800, 'image_height': 1800, 'pixel_scale': 0.2, 'exposure_time': 5520.0, 'sky_brightness': 20.5, 'zenith_psf_fwhm': 0.67, 'zero_point': 32.36, 'extinction': 0.07} (obs.frac. = 0.640)
+Will render all pixels with at least 21.2 detected electrons.
+PSF dilution factor is 0.049652.
+Simulation output will be saved to /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data/no_equilibration1_LSST-g1_0-g2_0/section_1_1.fits
+Simulated 8604 galaxies in 3035 overlap groups.
+
+------------------------------------------------------------
+Sender: LSF System <lsf@kiso0039>
+Subject: Job 441630: <python /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/WeakLensingDeblending/simulate.py --catalog-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/OneDegSq.fits --survey-name LSST --image-width 1800 --image-height 1800 --output-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data/no_equilibration1_LSST-g1_0-g2_0/section_1_1 --ra-center -0.35 --dec-center -0.35 --calculate-bias --cosmic-shear-g1 0.0 --cosmic-shear-g2 0.0 --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g 0.03> in cluster <slac> Done
+
+Job <python /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/WeakLensingDeblending/simulate.py --catalog-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/OneDegSq.fits --survey-name LSST --image-width 1800 --image-height 1800 --output-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data/no_equilibration1_LSST-g1_0-g2_0/section_1_1 --ra-center -0.35 --dec-center -0.35 --calculate-bias --cosmic-shear-g1 0.0 --cosmic-shear-g2 0.0 --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g 0.03> was submitted from host <ki-ls08> by user <imendoza> in cluster <slac> at Tue Nov 19 19:06:13 2019
+Job was executed on host(s) <kiso0039>, in queue <medium>, as user <imendoza> in cluster <slac> at Tue Nov 19 19:06:16 2019
+</u/ki/imendoza> was used as the home directory.
+</nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD> was used as the working directory.
+Started at Tue Nov 19 19:06:16 2019
+Terminated at Tue Nov 19 19:46:16 2019
+Results reported at Tue Nov 19 19:46:16 2019
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/WeakLensingDeblending/simulate.py --catalog-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/params/OneDegSq.fits --survey-name LSST --image-width 1800 --image-height 1800 --output-name /nfs/slac/g/ki/ki19/deuce/AEGIS/ismael/WLD/data/no_equilibration1_LSST-g1_0-g2_0/section_1_1 --ra-center -0.35 --dec-center -0.35 --calculate-bias --cosmic-shear-g1 0.0 --cosmic-shear-g2 0.0 --verbose --no-stamps --no-agn --no-hsm --filter-band i --variations-g 0.03
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   2387.30 sec.
+    Max Memory :                                 1011 MB
+    Average Memory :                             507.56 MB
+    Total Requested Memory :                     -
+    Delta Memory :                               -
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                4
+    Run time :                                   2410 sec.
+    Turnaround time :                            2403 sec.
+
+The output (if any) is above this job summary.
+
