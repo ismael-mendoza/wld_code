@@ -1,0 +1,52 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{mathtools}
+
+\newcommand{\pth}[1]{\left(#1\right)}
+\newcommand{\del}{\partial}
+
+
+\begin{document}
+
+We quickly derive expressions for numerical second partial derivatives. Let $f\pth{\alpha, \beta}$ be a function with two parameters $\alpha, \beta$. Consider the numerical first partial derivative of $f$ with respect to $\alpha$ using some step size $\Delta \alpha$:  
+%
+\[
+    \frac{\partial f}{\partial \alpha} = \frac{f\pth{\alpha + \Delta \alpha} - f\pth{\alpha - \Delta \alpha}}{2 \Delta \alpha}
+\]
+%
+how about the second partial $\partial^2_{\alpha} f$? 
+%
+\begin{align*}
+    \frac{\del^2 f}{\del^2 \alpha} &= \frac{\del}{\del \alpha}\pth{ \frac{\del f}{\del \alpha}  } \\ 
+    &= \frac{\del}{\del \alpha} \pth{\frac{f\pth{\alpha + \Delta \alpha, \beta } - f\pth{\alpha - \Delta \alpha, \beta}}{2 \Delta \alpha}} \\
+    &= {1 \over 2\Delta \alpha} \pth{\frac{\del}{\del \alpha} f\pth{\alpha + \Delta \alpha, \beta } - \frac{\del}{\del \alpha} f\pth{\alpha - \Delta \alpha, \beta } } \\
+    &=  {1 \over 2\Delta \alpha} \bigl (
+    {f\pth{\alpha + \Delta \alpha + \Delta \alpha, \beta } - f\pth{\alpha + \Delta \alpha - \Delta \alpha, \beta } \over 2 \Delta \alpha}     
+    -  \\
+    &{f\pth{\alpha - \Delta \alpha + \Delta \alpha, \beta } - f\pth{\alpha - \Delta \alpha - \Delta \alpha, \beta} \over 2 \Delta \alpha}  \bigr )
+    \\
+    &=  {f\pth{\alpha + 2 \Delta \alpha, \beta } + f \pth{\alpha - 2 \Delta \alpha, \beta } - 2 f\pth{\alpha, \beta} \over 4 \Delta \alpha^2}
+\end{align*}
+%
+We can similarly obtain an expression for mixed partials: 
+%
+\begin{align*}
+    \frac{\del^2 f}{\del \alpha \del \beta} &= \frac{\del}{\del \beta}\pth{ \frac{\del f}{\del \alpha}  } \\ 
+    &= \frac{\del}{\del \beta} \pth{\frac{f\pth{\alpha + \Delta \alpha, \beta } - f\pth{\alpha - \Delta \alpha, \beta}}{2 \Delta \alpha}} \\
+    &= {1 \over 2\Delta \alpha} \pth{\frac{\del}{\del \beta} f\pth{\alpha + \Delta \alpha, \beta } - \frac{\del}{\del \beta} f\pth{\alpha - \Delta \alpha, \beta } } \\
+    &=  {1 \over 2\Delta \alpha} \bigl (
+    {f\pth{\alpha + \Delta \alpha , \beta + \Delta \beta} - f\pth{\alpha + \Delta \alpha , \beta  - \Delta \beta} \over 2 \Delta \beta}     
+    -  \\
+    &{f\pth{\alpha - \Delta \alpha , \beta + \Delta \beta } - f\pth{\alpha - \Delta \alpha, \beta - \Delta \beta} \over 2 \Delta \beta}  \bigr )
+    \\
+    &=  {f \pth{\alpha + \Delta \alpha , \beta + \Delta \beta} + f\pth{\alpha - \Delta \alpha, \beta - \Delta \beta} - f\pth{\alpha + \Delta \alpha , \beta  - \Delta \beta} - f\pth{\alpha - \Delta \alpha , \beta + \Delta \beta } \over 4 \Delta \alpha \Delta \beta}
+\end{align*}
+
+
+
+
+
+
+
+
+\end{document}

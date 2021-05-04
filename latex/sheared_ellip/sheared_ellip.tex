@@ -1,0 +1,50 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{mathtools}
+
+
+\begin{document}
+
+For any complex number $\left \vert z \right \vert < 1 $: 
+\[
+(1 + z)^{-1} = \sum_{n=0}^{\infty}  \left(-z\right)^{n}
+\]
+
+In particular assuming $\left \vert g \right \vert < 1$ and $\left \vert \epsilon \right \vert < 1$, so that $\left \vert g^{\star}\epsilon \right \vert < 1 $: 
+
+\[
+\left(1 + g^{\star}\epsilon\right)^{-1} = \sum_{n=0}^{\infty} \left(-g^{\star} \epsilon\right)^{n}
+\]
+
+So, 
+
+\begin{eqnarray*}
+\epsilon' &=& \frac{\epsilon + g }{1 + g^{\star}\epsilon}\\
+&=&\left(\epsilon + g \right) \left(1 + g^{\star}\epsilon\right)^{-1} = \left(\epsilon + g \right)\sum_{n=0}^{\infty} \left(-g^{\star} \epsilon\right)^{n} \\
+&=& \epsilon + g + \sum_{n=1}^{\infty} \left[ \left(-g^{\star}\right)^{n} \epsilon^{n+1} + g (-g^{\star})^{n} \epsilon^{n} \right] 
+\end{eqnarray*}
+
+Taking expectation from both sides, 
+
+\[
+\langle \epsilon' \rangle =  g + \langle \epsilon \rangle + \sum_{n=1}^{\infty} \left[ \left(-g^{\star}\right)^{n} \langle \epsilon^{n+1} \rangle + g (-g^{\star})^{n} \langle \epsilon^{n} \rangle \right] 
+\]
+
+So, in general, $\langle \epsilon' \rangle  = g$ \textbf{exactly} if $\langle \epsilon^{n}\rangle = 0 $ for all $n \geq 1$.  \\
+
+But this is, in fact, the case. Note that any particular ellipticity can be written in terms of its magnitude and angle in the complex plane: 
+\[
+\epsilon = \epsilon_{0} e^{i\theta}, \; 0 \leq \theta \leq 2 \pi 
+\]
+
+
+Assume the that distribution of intrinsic ellipticities $f\left(\epsilon_{0}, \theta \right) $ is uniform in the angle, this means that $ f\left(\epsilon_{0}, \theta \right) = f\left(\epsilon_{0}\right)$ (only depends on the radius). 
+Then, the expectation $ \langle \epsilon^{n} \rangle$ over this distribution $f$ becomes, 
+
+\begin{eqnarray*}
+\langle  \epsilon^{n} \rangle &=& {1 \over 2\pi}   \int_{0}^{1} \int_{0}^{2\pi} \epsilon^{n} f(\epsilon_{0}, \theta)  d\theta d \epsilon_{0} = {1 \over 2\pi}  \int_{0}^{1} \epsilon_{0}^{n} f(\epsilon_{0}) d\epsilon_{0} \int_{0}^{2\pi} e^{in \theta} d\theta   \\
+&=& {1 \over 2\pi}  \int_{0}^{1} \epsilon_{0}^{n} f(\epsilon_{0}) \left( \frac{e^{in \theta}}{in} \biggr \rvert^{2\pi}_{0} \right) d\epsilon_{0} \\ 
+&=&  {1 \over 2\pi i n }  \int_{0}^{1} \epsilon_{0}^{n} f(\epsilon_{0}) \left(e^{i 2\pi n} - 1 \right) d\epsilon_{0}   = 0 , \; \; \text{ for $n = 1,2,3...$}
+\end{eqnarray*}
+
+\end{document}
