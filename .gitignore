@@ -6,3 +6,4 @@
 *.png
 jupyter/old*
 *.ipynb_checkpoints
+*__pycache__

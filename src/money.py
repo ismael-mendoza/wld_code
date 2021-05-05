@@ -172,7 +172,7 @@ def prepare_money_plot(g1s, orig_ids, scats, fnc, fit_procedure=chi_sq_fit, N=10
 
 def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_procedure=chi_sq_fit, model=linear_f,
                     ticks1=None, labely1=None, ax=None, colors=None, extra=None,
-                    legend_size=25, tick_size=40, label_size=40, markers=("o", "+"), marker_sizes=(10, 10)):
+                    legend_size=25, tick_size=40, label_size=40, markers=("o", "+"), marker_sizes=(10, 10), displacements=(0., 0.)):
     """
     * The errors are obtained as the square root of the diagonal of the covariance matrix.
     * betas = [betas_iso, betas_grp] in that order. 
@@ -187,9 +187,9 @@ def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_p
     if colors is None:
         colors = ['red', 'blue']
 
-    ax.errorbar(g1s, values, yerr=errs, marker=markers[0], linestyle=' ', color=colors[0], capsize=3, markersize=marker_sizes[0],
+    ax.errorbar(g1s+displacements[0], values, yerr=errs, marker=markers[0], linestyle=' ', color=colors[0], capsize=3, markersize=marker_sizes[0],
                 label="\\rm Blending off{}".format(extra))
-    ax.errorbar(g1s, values_grp, yerr=errs_grp, marker=markers[1], linestyle=' ', color=colors[1], capsize=3,
+    ax.errorbar(g1s+displacements[1], values_grp, yerr=errs_grp, marker=markers[1], linestyle=' ', color=colors[1], capsize=3,
                 label="\\rm Blending on{}".format(extra), markersize=marker_sizes[1])
 
     # plot line
@@ -206,10 +206,10 @@ def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_p
             0, 1] / np.sqrt(param_cov_grp[0, 0] * param_cov_grp[1, 1])
 
         y = linear_f(betas, x)
-        ax.plot(x, y, c=colors[0])
+        ax.plot(x, y, c=colors[0], lw=3, alpha=0.5)
 
         y_grp = linear_f(betas_grp, x)
-        ax.plot(x, y_grp, c=colors[1])
+        ax.plot(x, y_grp, c=colors[1], lw=3, alpha=0.5)
 
         print("Results for fits of unblended case: \n")
 
@@ -229,10 +229,10 @@ def make_money_plot(g1s, values, errs, values_grp, errs_grp, inv, inv_grp, fit_p
 
     elif model is cubic_f or model is penta_f:
         y = model(betas, x)
-        ax.plot(x, y, c=colors[0])
+        ax.plot(x, y, c=colors[0], lw=3, alpha=0.5)
 
         y_grp = model(betas_grp, x)
-        ax.plot(x, y_grp, c=colors[1])
+        ax.plot(x, y_grp, c=colors[1], lw=3, alpha=0.5)
 
     ax.tick_params(axis='both', which='major', labelsize=tick_size)
 
